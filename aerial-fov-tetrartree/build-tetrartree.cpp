@@ -9,7 +9,12 @@ using namespace std;
 // Global variants
 FILE* index_file; 
 int index_root_id; //The id of root index node.
-
+int index_node_read_num;
+int index_node_write_num;
+double index_node_read_time;
+double index_node_write_time;
+long long CombineMBRTetrad_invoke_num;
+double CombineMBRTetrad_invoke_time;
 
 int main(int argc, char* argv[])
 {
@@ -55,6 +60,14 @@ int main(int argc, char* argv[])
 	printf("TetraR-tree Construct Time: %.6f sec\n", index_building_time);
 	fprintf(index_log_file, "TetraR-tree Construct Time: %.6f sec\n", index_building_time);
 	
+    fprintf(index_log_file, "Index Node Read Number: %d\n", index_node_read_num);
+    fprintf(index_log_file, "Index Node Read Time: %.3f secs\n", index_node_read_time);
+    fprintf(index_log_file, "Index Node Write Number: %d\n", index_node_write_num);
+    fprintf(index_log_file, "Index Node Write Time: %.3f secs\n", index_node_write_time);
+    
+    fprintf(index_log_file, "CombineMBRTetrad_invoke_num: %lld\n", CombineMBRTetrad_invoke_num);
+    fprintf(index_log_file, "CombineMBRTetrad_invoke_time: %.3f secs\n", CombineMBRTetrad_invoke_time);
+    
 	printf("Index Root Node ID: %d\n", index_root_id);
 	fprintf(index_log_file, "Index Root Node ID: %d\n", index_root_id);
 	
