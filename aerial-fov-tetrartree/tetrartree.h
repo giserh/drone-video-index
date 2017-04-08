@@ -247,6 +247,34 @@ void Copy(pTETRARTREENODE n1,pTETRARTREENODE n2);
 
 
 /**
+ * Copy an MBR to another MBR: mbr1 <- mbr2
+ */
+void CopyMBR(MBR* mbr1, MBR* mbr2);
+
+
+/**
+ * Copy a set(four) of MBRs to another set of MBRs: mbrs1 <- mbrs2
+ */
+void CopyMBRs(MBR* mbrs1, MBR* mbrs2);
+
+
+/**
+ * Copy an MBO to another MBS: mbo1 <- mbo2
+ */
+void CopyMBO(MBO* mbo1, MBO* mbo2);
+
+
+/**
+ * Copy the allover info of the two groups (in root->partions) to 
+ * the two branches: b1 and b2. 
+ * nodeid1 and nodeid2 are the node ids of b1 and b2.
+ */
+void PARTITION2Branches(HTETRARTREEROOT root, 
+                        TETRARTREEBRANCH *b1, int nodeid1,
+						TETRARTREEBRANCH *b2, int nodeid2);
+
+
+/**
  * Calculate the n-dimensional volume of a rectangle
  */
 REALTYPE RTreeRectVolume( MBR *mbr );

@@ -781,9 +781,44 @@ int RTreePickBranch( TETRARTREEBRANCH * pbranch, TETRARTREENODE *node)
 }
 
 
+void CopyMBR(MBR* mbr1, MBR* mbr2)
+{
+	for(int j=0;j<SIDES_NUMB;j++)
+	{
+		mbr1->bound[j] = mbr2->bound[j];
+	}
+}
+
+
+void CopyMBRs(MBR* mbrs1, MBR* mbrs2)
+{
+	for(int i=0; i<MBR_NUMB; i++)
+	{
+		CopyMBR(&(mbrs1[i]), &(mbrs2[i]));
+	}
+}
 
 
 
+void CopyMBO(MBO* mbo1, MBO* mbo2)
+{
+	mbo1->min = mbo2->min;
+	mbo1->max = mbo2->max;
+}
+
+
+void PARTITION2Branches(HTETRARTREEROOT root, 
+                        TETRARTREEBRANCH *b1, int nodeid1,
+						TETRARTREEBRANCH *b2, int nodeid2)
+{
+	b1->childid = nodeid1;
+	CopyMBRs(b1->mbrs, root->Partitions[0].cover[0]);
+	CopyMBO(&(b1->orientation), &(root->Partitions[0].coverOrientation[0]));
+	
+	b2->childid = nodeid2;
+	CopyMBRs(b2->mbrs, root->Partitions[0].cover[1]);
+	CopyMBO(&(b2->orientation), &(root->Partitions[0].coverOrientation[1]));
+}
 
 
 
@@ -836,8 +871,13 @@ int RTreePickBranch( TETRARTREEBRANCH * pbranch, TETRARTREENODE *node)
   }
   
   /* child was split */
-  TetraRTreeNodeCover(&(node->branch[i]), &child);
-  TetraRTreeNodeCover(&b, n2);
+  //TetraRTreeNodeCover(&(node->branch[i]), &child);
+  //TetraRTreeNodeCover(&b, n2);
+  /**
+   * Copy the allover info of the two groups (in root->partions) to the two branches:
+   * node->branch[i] and b.
+   */
+  PARTITION2Branches(root, &(node->branch[i]), child.nodeid, &b, n2->nodeid);
   
   return AddBranch(root, &b, node, new_node);
  } 
@@ -943,6 +983,8 @@ void build_index(FILE* &object_file, FILE* &index_file)
 				/* root is splitted */
 				int ftaken;
 				
+				
+			
 				/* Create a new root, and tree grows taller */
 				newroot=(TETRARTREENODE*)malloc(sizeof(TETRARTREENODE)); 
 				InitNode(newroot);
@@ -964,12 +1006,14 @@ void build_index(FILE* &object_file, FILE* &index_file)
 				index_root_id = newroot->nodeid; // Update index root node id.
 				
 				/*Add root.root_node as a branch of newroot*/
-				TetraRTreeNodeCover(&b, root.root_node);
-				fseek(index_file,0L,SEEK_END);
-				AddBranch(&root, &b, newroot, NULL);
+				//TetraRTreeNodeCover(&b, root.root_node);
+				//fseek(index_file,0L,SEEK_END);
+				//AddBranch(&root, &b, newroot, NULL);
+				PARTITION2Branches(&root, &(newroot->branch[0]), root.root_node->nodeid, 
+				                          &b, newnode->nodeid);
 				
 				/*Add newnode as a branch of newroot*/
-				TetraRTreeNodeCover(&b, newnode);
+				//TetraRTreeNodeCover(&b, newnode);
 				AddBranch(&root, &b, newroot, NULL);
 
 				fseek(index_file,((root.root_node->nodeid)-1)*sizeof(TETRARTREENODE),0);
