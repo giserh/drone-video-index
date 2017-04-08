@@ -379,6 +379,7 @@ void _RTreeGetBranches(HTETRARTREEROOT root,
  root->BranchCount = MAXKIDS(node) + 1;
 
  /* calculate mbr containing all in the set */
+ /** Useless for nodes' partition.
  for(i=0; i<MBR_NUMB; i++) root->CoverSplit[i] = root->BranchBuf[0].mbrs[i];
  for (i=1; i<MAXKIDS(node)+1; i++)
  {
@@ -386,7 +387,7 @@ void _RTreeGetBranches(HTETRARTREEROOT root,
   CombineMBRTetrad(root->CoverSplit, root->CoverSplit, root->BranchBuf[i].mbrs);
  }
 
- root->CoverSplitArea = RectSphericalVolume(root->CoverSplit);
+ root->CoverSplitArea = RectSphericalVolume(root->CoverSplit);*/
  EmptyNode(node); //Important
 }
 
@@ -528,10 +529,6 @@ void _RTreeMethodZero(HTETRARTREEROOT root,
 	MBR rect_0[MBR_NUMB], rect_1[MBR_NUMB];
     REALTYPE growth0, growth1, diff;
     
-    /*rect_0 = RTreeCombineRect(r, &p->cover[0]);
-    rect_1 = RTreeCombineRect(r, &p->cover[1]);
-    growth0 = RectSphericalVolume(&rect_0) - p->area[0]; //计算第i个分支与两组的距离
-    growth1 = RectSphericalVolume(&rect_1) - p->area[1];*/
 	growth0 = CombineMBRTetrad(rect_0, r, pcover_group0);
 	growth1 = CombineMBRTetrad(rect_1, r, pcover_group1);
     diff = growth1 - growth0;
@@ -612,19 +609,19 @@ void _RTreeLoadNodes(HTETRARTREEROOT root, TETRARTREENODE *n,
 void SplitNode(HTETRARTREEROOT root, TETRARTREENODE *node, 
                TETRARTREEBRANCH *br, TETRARTREENODE **new_node)
 {
- TETRARTREEPARTITION *p;
+ TETRARTREEPARTITION *p; //TODO: make it as output otherwise it will make recomputations for the allover MBRs/MBO info.
  int level;
  assert(node && br);
  
- /* load all the branches into a buffer, initialize old node */
- level = node->level; //关键!!!!!!!!!!!!!!!!!!!!!!!!记住原来root的层数和nodeid号，否则清空，后果不堪设想!!!
+ /* load all the branches into a buffer (root->BranchBuf), initialize old node */
+ level = node->level; //
  _RTreeGetBranches(root, node, br);
 
 
  /* find partition */
- p = &(root->Partitions[0]);///////可见实际分配的内存是在root中，在一开始
+ p = &(root->Partitions[0]); //Get the partition address.
 
- /* Note: can&apos;t use MINFILL(n) below since node was cleared by GetBranches() */
+ /* Note: use MINFILL(n) below since node was cleared by GetBranches() */
  _RTreeMethodZero(root, p, (level>0 ? MINNODEFILL : MINLEAFFILL));
 
 
@@ -682,7 +679,9 @@ void SplitNode(HTETRARTREEROOT root, TETRARTREENODE *node,
    if (node->branch[i].childid == 0)
    {
     CopyBranch(&(node->branch[i]),br);
-    node->count++;  
+    node->count++; 
+	CombineMBRTetrad(node->branch[i].mbrs, node->branch[i].mbrs, br->mbrs); //Update 
+    node->branch[i].orientation = CombineMBO(&(br->orientation), &(node->branch[i].orientation));
 	fseek(index_file,(node->nodeid-1)*sizeof(TETRARTREENODE),0);
 	fwrite(node,sizeof(TETRARTREENODE),1,index_file);
 	/*std::cout << "nodeid: " << node->nodeid
@@ -799,7 +798,7 @@ int RTreePickBranch( TETRARTREEBRANCH * pbranch, TETRARTREENODE *node)
  */
  int _RTreeInsertRect(HTETRARTREEROOT root, TETRARTREEBRANCH *pbranch,  
                       TETRARTREENODE *node, TETRARTREENODE **new_node, int level)
-{//root为树根；mbr为需插入的项值；tid为项标识；node为当前找到的节点；
+{
  int i;
  TETRARTREEBRANCH b;
  InitBranch(&b);
@@ -820,12 +819,7 @@ int RTreePickBranch( TETRARTREEBRANCH * pbranch, TETRARTREENODE *node)
   if (!_RTreeInsertRect(root, pbranch, &child, &n2, level))
   {
    /* child was not split */
-   /*node->branch[i].mbr = RTreeCombineRect(&(pbranch->mbr), &(node->branch[i].mbr));
-   if(node->branch[i].childid==0)
-   {
-	   node->branch[i].childid=pbranch->childid;
-   }*/
-   if(node->branch[i].childid==0)
+   /*if(node->branch[i].childid==0)
    {
 	   node->branch[i].childid=pbranch->childid;
    }
@@ -834,10 +828,10 @@ int RTreePickBranch( TETRARTREEBRANCH * pbranch, TETRARTREENODE *node)
 
    fseek(index_file,(node->nodeid-1)*sizeof(TETRARTREENODE),0);
    fwrite(node,sizeof(TETRARTREENODE),1,index_file);
-   /*std::cout << "nodeid: " << node->nodeid
-					  << "\t cout: " << node->count
-					  << "\t level: " << node->level << std::endl;*/
-   fflush(index_file);
+   //std::cout << "nodeid: " << node->nodeid
+   //				  << "\t cout: " << node->count
+   //				  << "\t level: " << node->level << std::endl;
+   fflush(index_file);*/
    return 0;
   }
   
@@ -918,6 +912,7 @@ void build_index(FILE* &object_file, FILE* &index_file)
 		long leng=ftell(index_file);
 		if(leng==0) 
 		{   
+			/*Write the first index node.*/
 			root.root_node->taken=1;
 			root.root_node->nodeid=1; 
 			index_root_id = root.root_node->nodeid;
@@ -930,26 +925,31 @@ void build_index(FILE* &object_file, FILE* &index_file)
 					  << "\t cout: " << root.root_node->count
 					  << "\t level: " << root.root_node->level << std::endl;*/
 			fflush(index_file);
-		}//end if leng==0
+		}
 		else
 		{
-			FindRoot(root.root_node);
-			////////////////////////////////////插入/////////////////////////////////////////////////
-  
+			FindRoot(root.root_node); //Read the root node from disk.
+			
+			/**
+			 * In the following, insert the branch into the index.
+			 */
 			TETRARTREENODE *newroot;
 			TETRARTREENODE *newnode;
 			TETRARTREEBRANCH b;
 			InitBranch(&b);
 			
-			/* root split */
-			if (_RTreeInsertRect(&root, &branch, root.root_node, &newnode, 0))  //返回来的两节点已写到文件中了
+			if (_RTreeInsertRect(&root, &branch, root.root_node, &newnode, 0))  
 			{
+				/* root is splitted */
 				int ftaken;
-				newroot=(TETRARTREENODE*)malloc(sizeof(TETRARTREENODE)); /* grow a new root, & tree taller */
+				
+				/* Create a new root, and tree grows taller */
+				newroot=(TETRARTREENODE*)malloc(sizeof(TETRARTREENODE)); 
 				InitNode(newroot);
 				newroot->taken=1;
 				newroot->level = root.root_node->level + 1;
-
+				
+				/* Find the first index node slot on the disk */
 				fseek(index_file,0L,SEEK_END);
 				leng=ftell(index_file);
 				int i;
@@ -959,12 +959,16 @@ void build_index(FILE* &object_file, FILE* &index_file)
 				 fread(&ftaken,sizeof(int),1,index_file);
 				 if(ftaken==0) break;
 				}
+				
 				newroot->nodeid=i/sizeof(TETRARTREENODE)+1;
-				index_root_id = newroot->nodeid;
+				index_root_id = newroot->nodeid; // Update index root node id.
+				
+				/*Add root.root_node as a branch of newroot*/
 				TetraRTreeNodeCover(&b, root.root_node);
 				fseek(index_file,0L,SEEK_END);
 				AddBranch(&root, &b, newroot, NULL);
 				
+				/*Add newnode as a branch of newroot*/
 				TetraRTreeNodeCover(&b, newnode);
 				AddBranch(&root, &b, newroot, NULL);
 

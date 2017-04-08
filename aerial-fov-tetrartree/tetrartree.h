@@ -24,7 +24,7 @@ extern "C" {
 #define MAXCARD 203
 
 #ifndef INVALD_RECT
-  #define INVALID_RECT(x) ((x)->bound[0] > (x)->bound[DIMS_NUMB])//min>max,则无效矩形
+  #define INVALID_RECT(x) ((x)->bound[0] > (x)->bound[DIMS_NUMB])//min>max,锟斤拷锟斤拷效锟斤拷锟斤拷
 #endif
 
 #ifndef UnitSphereVolume
@@ -32,7 +32,7 @@ extern "C" {
 #endif
 
 /**
- * Precomputed volumes of the unit spheres for the first few dimensions 
+ * Precomputed volumes of the unit spheres for the first few dimensions
  */
 const double UnitSphereVolumes[] = {
  0.000000,  /* dimension   0 */
@@ -59,38 +59,46 @@ const double UnitSphereVolumes[] = {
 };
 
 
-typedef struct _MBR //MBR
+/**
+ * The data structure of Minimum Bounding Rectangle (MBR)
+ */
+typedef struct _MBR
 {
-	/** 
-	 * minX, minY,...,Xmax, maxY,... 
+	/**
+	 * minX, minY,...,Xmax, maxY,...
 	 * i.e., minLng, minLat, maxLng, maxLat
 	 */
-	REALTYPE bound[SIDES_NUMB]; 
+	REALTYPE bound[SIDES_NUMB];
 }MBR,*pMBR;
 
 
+
+
 /**
- * The type of Minimum Bounding Orientation (MBO)
+ * The data structure of Minimum Bounding Orientation (MBO)
  */
-typedef struct _MBO 
+typedef struct _MBO
 {
 	REALTYPE min;
 	REALTYPE max;
 }MBO, *pMBO;
 
 
-typedef struct _TETRARTREEBRANCH//branch
+/**
+ * The data structure of TetraR-tree node branch.
+ * A TetraR-tree node includes a set of branches.
+ */
+typedef struct _TETRARTREEBRANCH
 {
 	/**
-	 * The four MBRs or points of the quadrilaterals
-     * in the subtree.
-     */	 
-	MBR mbrs[MBR_NUMB]; 
-	
+	 * The four MBRs or points of the quadrilaterals in the subtree.
+     */
+	MBR mbrs[MBR_NUMB];
+
 	MBO orientation; //MBO
-	
+
     /**
-     * For non-leaf node: id of child node;	
+     * For non-leaf node: id of child node;
 	 * For leaf node: file offset of object
 	 */
 	int childid;
@@ -98,40 +106,99 @@ typedef struct _TETRARTREEBRANCH//branch
 
 
 
-typedef struct _TETRARTREENODE // node structure
+/**
+ * The data structure of TetraR-tree node
+ */
+typedef struct _TETRARTREENODE
 {
- int taken;//标记第ID号是否被占，1占，0未占
- int nodeid; //自身节点的ID
- int count;//分支数计数
- int level; /* 0 is leaf, others positive */
+	/**
+     * mark the node space in the disk is taken or not
+	 * mark 1 if taken; otherwise mark 0.
+	 */
+	int taken;
+
+	/**
+	 * Node ID
+	 */
+	int nodeid;
+
+	/**
+	 * The number of child branches of the node
+	 */
+    int count;
+
+	/**
+	 * The level of the node in the tree.
+	 * 0 if leaf node; otherwise positive.
+	 */
+    int level;
  TETRARTREEBRANCH  branch[MAXCARD];
-}TETRARTREENODE,*pTETRARTREENODE; 
+}TETRARTREENODE,*pTETRARTREENODE;
 
 
 
 
-typedef struct _TETRARTREEPARTITION/////////////////////////////////////////////////////为了分裂之需
+/**
+ * The index node loader that is used to store the information during partition.
+ * Store the branches of a node to be splitted and the branch to be inserted.
+ */
+typedef struct _TETRARTREEPARTITION
 {
- int   partition[MAXCARD+1];//对应root结构中的分支，标号对应
- int   total;//实际分支数
- int   minfill;//最小容纳的面积
- int   taken[MAXCARD+1];//标明对应分支是否被占，即是否进行分组
- int   count[2];//两组各有的实际分支数
- MBR cover[2][MBR_NUMB];//两组各分支的MBR值总和
- MBO coverOrientation[2]; 
- REALTYPE alloverScore[2];//两组各分支的MBR值对应的总面积
+	/*Store the group/partition number for each branch in the partition*/
+	int   partition[MAXCARD+1];
+
+    /*Number of total branches*/
+	int   total;
+
+    /*The minimum area it covers*/
+	int   minfill;
+	
+	/*Mark each branch whether be taken, i.e., whether be grouped*/
+	int   taken[MAXCARD+1];
+
+    /*The number of branches for each group*/
+	int   count[2];
+
+    /*The allover four-MBRs of MBRs in the two groups*/
+	MBR cover[2][MBR_NUMB];
+
+    /*The allover MBOs of MBOs in the two groups*/
+	MBO coverOrientation[2];
+
+    /**
+	 * The allover score (combination score of MBR area and orientation 
+	 * difference) for each group
+	 */
+	REALTYPE alloverScore[2];
 } TETRARTREEPARTITION;
 
 
 
+
+
+/**
+ * Store the root node information. 
+ * It inludes subtree branch info used for partition.
+ */
 typedef struct _TETRARTREEROOT
 {
- TETRARTREENODE*  root_node;
- TETRARTREEBRANCH  BranchBuf[MAXCARD+1];//实际存放的各待分裂分支
- int    BranchCount;
- MBR  CoverSplit[MBR_NUMB];
- REALTYPE  CoverSplitArea;
- TETRARTREEPARTITION Partitions[METHODS];
+	/*root node*/
+	TETRARTREENODE*  root_node;
+	
+	/*branches to be partitioned*/
+	TETRARTREEBRANCH  BranchBuf[MAXCARD+1];
+	
+	/*Actual branch number in BranchBuf*/
+	int    BranchCount;
+	
+	/*The allover MBRs of the root node*/
+	MBR  CoverSplit[MBR_NUMB];
+	
+	/*The area of the allover MBRs*/
+	REALTYPE  CoverSplitArea;
+	
+	/*The allover information of the two groups*/
+	TETRARTREEPARTITION Partitions[METHODS];
 } TETRARTREEROOT, * HTETRARTREEROOT;
 
 
@@ -165,8 +232,8 @@ typedef struct _TETRARTREEROOT
 
 
 
-							
-							
+
+
 /**
  * Copy a branch to another branch: b1 <- b2
  */
@@ -214,16 +281,16 @@ REALTYPE RectSphericalVolume( pMBR mbr );
  * Combine two rectangles/MBRs, make one that includes both.
  */
 MBR CombineMBR(MBR *rc1, MBR *rc2);
- 
+
 
 /**
  * Combine two lists (four) of rectangles (mbrs)
  * To make one list (four) of mbrs that includes both.
  */
 REALTYPE CombineMBRTetrad(MBR *new_mbrs, MBR *mbrs1, MBR *mbrs2);
- 
 
-/** 
+
+/**
  * Calculate the angle between two directions in clockwise direction.
  * The return value is in [0, 2PI]
  */
@@ -259,15 +326,15 @@ void FindRoot(TETRARTREENODE* rootp);
 /**
  * Initialize a TeTraRTreePartition structure.
  */
-void _TetraRTreeInitPart( TETRARTREEPARTITION *p, 
+void _TetraRTreeInitPart( TETRARTREEPARTITION *p,
                                  int maxrects, int minfill);
 
 
 /**
  * Load branch buffer with branches from full node plus the extra branch.
  */
-void _RTreeGetBranches(HTETRARTREEROOT root, 
-                              TETRARTREENODE *node, 
+void _RTreeGetBranches(HTETRARTREEROOT root,
+                              TETRARTREENODE *node,
 							  TETRARTREEBRANCH *br);
 
 
@@ -275,7 +342,7 @@ void _RTreeGetBranches(HTETRARTREEROOT root,
 /**
  * Put a branch in one of the groups.
  */
-void _RTreeClassify(HTETRARTREEROOT root, int i, int group, 
+void _RTreeClassify(HTETRARTREEROOT root, int i, int group,
                            TETRARTREEPARTITION *p);
 
 
@@ -301,51 +368,56 @@ void _TetraRTreePickSeeds(HTETRARTREEROOT root, TETRARTREEPARTITION *p);
  * fill requirement) then other group gets the rest.
  * These last are the ones that can go in either group most easily.
  */
-void _RTreeMethodZero(HTETRARTREEROOT root, 
-                             TETRARTREEPARTITION *p, 
+void _RTreeMethodZero(HTETRARTREEROOT root,
+                             TETRARTREEPARTITION *p,
 							 int minfill );
 
 /**
  * Copy branches from the buffer into two nodes according to the partition.
  */
-void _RTreeLoadNodes(HTETRARTREEROOT root, TETRARTREENODE *n, 
+void _RTreeLoadNodes(HTETRARTREEROOT root, TETRARTREENODE *n,
                             TETRARTREENODE *q, TETRARTREEPARTITION *p);
 
 
 
-							
-							
-							
-							
-							
-							
-							
-							
-							
-							
-							
-							
-							
+
+
+
+
+
+
+
+
+
+
+
+
+
 /**
  * Split a node.
  * Divides the nodes branches and the extra one between two nodes.
  * Old node is one of the new ones, and one really new one is created.
  * Tries more than one method for choosing a partition, uses best result.
  */
-void SplitNode(HTETRARTREEROOT root, TETRARTREENODE *node, 
-               TETRARTREEBRANCH *br, TETRARTREENODE **new_node);							
-							
-							
+void SplitNode(HTETRARTREEROOT root, TETRARTREENODE *node,
+               TETRARTREEBRANCH *br, TETRARTREENODE **new_node);
+
+
 /**
  * Add a branch to a node.  Split the node if necessary.
  * Returns 0 if node not split.  Old node updated.
  * Returns 1 if node split, sets *new_node to address of new node.
  * Old node updated, becomes one of two.
+ * 
+ * @param root
+ * @param br
+ * @param node
+ * @param new_node
  */
-int AddBranch(HTETRARTREEROOT root, TETRARTREEBRANCH *br, 
+int AddBranch(HTETRARTREEROOT root, TETRARTREEBRANCH *br,
                TETRARTREENODE *node, TETRARTREENODE **new_node);
 
-			   
+
 /**
  * Pick a branch.  Pick the one that will need the smallest increase
  * in area to accomodate the new rectangle.  This will result in the
@@ -355,21 +427,31 @@ int AddBranch(HTETRARTREEROOT root, TETRARTREEBRANCH *br,
  */
 int RTreePickBranch( TETRARTREEBRANCH * pbranch, TETRARTREENODE *node);
 
+
+
 /**
  * Inserts a new data rectangle into the index structure.
  * Recursively descends tree, propagates splits back up.
- * Returns 0 if node was not split.  Old node updated.
+ * Return 0 if node was not split.  Old node updated.
  * If node was split, returns 1 and sets the pointer pointed to by
  * new_node to point to the new node.  Old node updated to become one of two.
  * The level argument specifies the number of steps up from the leaf
  * level to insert; e.g. a data rectangle goes in at level = 0.
+ *
+ * @param root[in, out]: root index node.
+ * @param pbranch[in]:   the branch of new data to be inserted.
+ * @param node[in, out]: the index node where the pbranch is to be inserted.
+ * @param new_node[in, out]: a new created index node if node is splitted.
+ * @param level[in]:     the index level of pbranch to be inserted.
+ * 
+ * @return 1 if node is splitted; 0 otherwise.
  */
-int _RTreeInsertRect(HTETRARTREEROOT root, TETRARTREEBRANCH *pbranch,  
+int _RTreeInsertRect(HTETRARTREEROOT root, TETRARTREEBRANCH *pbranch,
                      TETRARTREENODE *node, TETRARTREENODE **new_node, int level);
-					  
-					  
-					  
-					  
+
+
+
+
 
 
 
