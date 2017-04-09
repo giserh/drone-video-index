@@ -413,7 +413,7 @@ void _RTreeGetBranches(HTETRARTREEROOT root,
  }
 
  root->CoverSplitArea = RectSphericalVolume(root->CoverSplit);*/
- EmptyNode(node); //Important
+ //EmptyNode(node); //Important
 }
 
  
@@ -545,40 +545,46 @@ void _RTreeMethodZero(HTETRARTREEROOT root,
   p->count[0] < p->total - p->minfill && 
   p->count[1] < p->total - p->minfill)
  {
-  biggestDiff = (REALTYPE)-1;
-  for (i=0; i<p->total; i++)
-  {
-   if (!p->taken[i])//作用在于此，更新作用，使得while能有效进行下去
-   {
-    MBR *r = root->BranchBuf[i].mbrs;;
-	MBR rect_0[MBR_NUMB], rect_1[MBR_NUMB];
-    REALTYPE growth0, growth1, diff;
-    
-	growth0 = CombineMBRTetrad(rect_0, r, pcover_group0);
-	growth1 = CombineMBRTetrad(rect_1, r, pcover_group1);
-    diff = growth1 - growth0;
-    if (diff >= 0)//选择距离（面积）增加更少的
-     group = 0;
-    else
-    {
-     group = 1;
-     diff = -diff;//因为此时diff是负值，而后面需要用其绝对值
-    }
-    if (diff > biggestDiff)
-    {
-     biggestDiff = diff;
-     chosen = i;
-     betterGroup = group;
-    }
-    else if (diff==biggestDiff && p->count[group]<p->count[betterGroup])//考虑两因素：首先距离，其次两组分支数，原则尽量紧凑，平衡
-    {
-     chosen = i;
-     betterGroup = group;
-    }
-   }//end if taken
-  }//end for
-  _RTreeClassify(root, chosen, betterGroup, p);//对于每一个分支都要全盘考虑，也即是从剩余的分支中出发，根据增加的面积最少，挑选其中的分支
-                                               //这是第一种方法；第二种则仅考虑自身，从各分支出发。
+	 biggestDiff = (REALTYPE)-1;
+	 for (i=0; i<p->total; i++)
+	 {
+		 if (!p->taken[i])//Consider the nodes that have not been grouped yet.
+		 {
+			 MBR *r = root->BranchBuf[i].mbrs;
+			 MBR rect_0[MBR_NUMB], rect_1[MBR_NUMB];
+			 REALTYPE growth0, growth1, diff;
+			 growth0 = CombineMBRTetrad(rect_0, r, pcover_group0);
+			 growth1 = CombineMBRTetrad(rect_1, r, pcover_group1);
+			 diff = growth1 - growth0;
+			 if (diff >= 0) group = 0; //Choose the group with smaller waste area.
+			 else
+			 {
+				 group = 1;
+				 diff = -diff; //Get the absolute value.
+			 }
+			 
+			 /**
+			  * This method consider node grouping order.
+			  * Group the node with the biggest diff first.
+			  * If there are two nodes have the same diff, then group the node 
+			  *    first whose group has less number of nodes trying to balance the 
+			  *    number of nodes of the two groups.
+			  */
+			 if (diff > biggestDiff)
+			 {
+				 biggestDiff = diff;
+				 chosen = i;
+				 betterGroup = group;
+		     }
+			 else if (diff==biggestDiff && p->count[group]<p->count[betterGroup])
+			 {
+				 chosen = i;
+				 betterGroup = group;
+			 }
+		 }//end if taken
+	 }//end for
+	 
+	 _RTreeClassify(root, chosen, betterGroup, p);       
  }//end while
 
  /* if one group too full, put remaining rects in the other */
@@ -611,15 +617,38 @@ void _RTreeLoadNodes(HTETRARTREEROOT root, TETRARTREENODE *n,
 {
  int i;
  assert(n && q && p);
-
- for (i=0; i<p->total; i++)
+ assert(n->count==0);
+ assert(q->count==0);
+ /*for (i=0; i<p->total; i++)
  {
   assert(p->partition[i] == 0 || p->partition[i] == 1);
   if (p->partition[i] == 0)
    AddBranch(root, &root->BranchBuf[i], n, NULL);
   else if (p->partition[i] == 1)
    AddBranch(root, &root->BranchBuf[i], q, NULL);
+ }*/
+ 
+ for (i=0; i<p->total; i++)
+ {
+	assert(p->partition[i] == 0 || p->partition[i] == 1);
+	if (p->partition[i] == 0)
+	{
+		CopyBranch(&(n->branch[n->count]), &root->BranchBuf[i]);
+		n->count++;
+	}
+	else if (p->partition[i] == 1)
+	{
+		CopyBranch(&(q->branch[q->count]), &root->BranchBuf[i]);
+		q->count++;
+	}
  }
+ clock_t tStart = clock();
+ fseek(index_file,(n->nodeid-1)*sizeof(TETRARTREENODE),0);
+ fwrite(n,sizeof(TETRARTREENODE),1,index_file);
+ fseek(index_file,(q->nodeid-1)*sizeof(TETRARTREENODE),0);
+ fwrite(q,sizeof(TETRARTREENODE),1,index_file);
+ index_node_write_num += 2;
+ index_node_write_time += (double)(clock() - tStart)/CLOCKS_PER_SEC;
 }
 
 
@@ -635,11 +664,11 @@ void SplitNode(HTETRARTREEROOT root, TETRARTREENODE *node,
                TETRARTREEBRANCH *br, TETRARTREENODE **new_node)
 {
  TETRARTREEPARTITION *p; //TODO: make it as output otherwise it will make recomputations for the allover MBRs/MBO info.
- int level;
+ //int level;
  assert(node && br);
  
- /* load all the branches into a buffer (root->BranchBuf), initialize old node */
- level = node->level; //
+ /* load all the branches into a buffer (root->BranchBuf)*/
+ //level = node->level; //
  _RTreeGetBranches(root, node, br);
 
 
@@ -647,10 +676,21 @@ void SplitNode(HTETRARTREEROOT root, TETRARTREENODE *node,
  p = &(root->Partitions[0]); //Get the partition address.
 
  /* Note: use MINFILL(n) below since node was cleared by GetBranches() */
- _RTreeMethodZero(root, p, (level>0 ? MINNODEFILL : MINLEAFFILL));
+ _RTreeMethodZero(root, p, (node->level>0 ? MINNODEFILL : MINLEAFFILL));
 
 
- /* put branches from buffer into 2 nodes according to chosen partition */
+ /** 
+  * Put branches from buffer into 2 nodes (storing in node and new_node) 
+  * according to chosen partition.
+  * For node, its nodeid, taken, level are not necessary to be changed.
+  * For new_node, newly create.
+  */
+  node->count = 0; //Initialize the count of node.
+  
+  /* Newly create new_node. */
+ *new_node = (TETRARTREENODE*)malloc(sizeof(TETRARTREENODE));
+ InitNode(*new_node);
+ (*new_node)->level = node->level; //Have the same level as node.
  int i,ftaken=2;
  long filelen;
  fseek(index_file,0L,SEEK_END);
@@ -661,23 +701,8 @@ void SplitNode(HTETRARTREEROOT root, TETRARTREENODE *node,
 	 fread(&ftaken,sizeof(int),1,index_file);//
 	 if(ftaken==0) break;
  }
- node->nodeid=i/sizeof(TETRARTREENODE)+1;
- node->taken=1;
- node->level=level;
-	 
- *new_node = (TETRARTREENODE*)malloc(sizeof(TETRARTREENODE));
- InitNode(*new_node);
- (*new_node)->level = level;
-
- for(;i<(int)filelen;i=i+sizeof(TETRARTREENODE))
- {
-	 fseek(index_file,i,0);
-	 fread(&ftaken,sizeof(int),1,index_file);//
-	 if(ftaken==0 && (i/sizeof(TETRARTREENODE)+1)!=(unsigned int)(node->nodeid)) break;
- }
  (*new_node)->nodeid=i/sizeof(TETRARTREENODE)+1;
  (*new_node)->taken=1;
-
 
  _RTreeLoadNodes(root, node, *new_node, p);
 
@@ -901,13 +926,13 @@ void PARTITION2Branches(HTETRARTREEROOT root,
   }
   
   /* child was split */
-  //TetraRTreeNodeCover(&(node->branch[i]), &child);
-  //TetraRTreeNodeCover(&b, n2);
+  TetraRTreeNodeCover(&(node->branch[i]), &child);
+  TetraRTreeNodeCover(&b, n2);
   /**
    * Copy the allover info of the two groups (in root->partions) to the two branches:
    * node->branch[i] and b.
    */
-  PARTITION2Branches(root, &(node->branch[i]), child.nodeid, &b, n2->nodeid);
+  //PARTITION2Branches(root, &(node->branch[i]), child.nodeid, &b, n2->nodeid);
   
   return AddBranch(root, &b, node, new_node);
  } 
@@ -1015,10 +1040,7 @@ void build_index(FILE* &object_file, FILE* &index_file)
 			if (_RTreeInsertRect(&root, &branch, root.root_node, &newnode, 0))  
 			{
 				/* root is splitted */
-				int ftaken;
 				
-				
-			
 				/* Create a new root, and tree grows taller */
 				newroot=(TETRARTREENODE*)malloc(sizeof(TETRARTREENODE)); 
 				InitNode(newroot);
@@ -1026,6 +1048,7 @@ void build_index(FILE* &object_file, FILE* &index_file)
 				newroot->level = root.root_node->level + 1;
 				
 				/* Find the first index node slot on the disk */
+				int ftaken;
 				fseek(index_file,0L,SEEK_END);
 				leng=ftell(index_file);
 				int i;
@@ -1035,20 +1058,22 @@ void build_index(FILE* &object_file, FILE* &index_file)
 				 fread(&ftaken,sizeof(int),1,index_file);
 				 if(ftaken==0) break;
 				}
-				
 				newroot->nodeid=i/sizeof(TETRARTREENODE)+1;
 				index_root_id = newroot->nodeid; // Update index root node id.
+				newroot->count = 2;
 				
+				PARTITION2Branches(&root, &(newroot->branch[0]), root.root_node->nodeid, 
+				                          &(newroot->branch[1]), newnode->nodeid);
+										  
 				/*Add root.root_node as a branch of newroot*/
 				//TetraRTreeNodeCover(&b, root.root_node);
 				//fseek(index_file,0L,SEEK_END);
 				//AddBranch(&root, &b, newroot, NULL);
-				PARTITION2Branches(&root, &(newroot->branch[0]), root.root_node->nodeid, 
-				                          &b, newnode->nodeid);
+				
 				
 				/*Add newnode as a branch of newroot*/
 				//TetraRTreeNodeCover(&b, newnode);
-				AddBranch(&root, &b, newroot, NULL);
+				//AddBranch(&root, &b, newroot, NULL);
 
 				//fseek(index_file,((root.root_node->nodeid)-1)*sizeof(TETRARTREENODE),0);
 				//fwrite(root.root_node,sizeof(TETRARTREENODE),1,index_file);

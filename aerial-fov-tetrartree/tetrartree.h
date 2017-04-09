@@ -19,9 +19,9 @@ extern "C" {
 
 /* max branching factor of a node */
 //Assume one index node takes one page
-//#define MAXCARD (int)((PAGE_SIZE-(4*sizeof(int))) / sizeof(TETRARTREEBRANCH))
+#define MAXCARD (int)((PAGE_SIZE-(4*sizeof(int))) / sizeof(TETRARTREEBRANCH))
 
-#define MAXCARD 203
+//#define MAXCARD 203
 
 #ifndef INVALD_RECT
   #define INVALID_RECT(x) ((x)->bound[0] > (x)->bound[DIMS_NUMB])//min>max,����Ч����
