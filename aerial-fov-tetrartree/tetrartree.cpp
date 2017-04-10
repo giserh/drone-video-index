@@ -22,7 +22,7 @@ static char THIS_FILE[] = __FILE__;
 #endif
 
 // Global variants
-extern FILE* index_file; 
+extern FILE* index_file;
 extern int index_root_id; //The id of root index node.
 extern int index_node_read_num;
 extern int index_node_write_num;
@@ -109,8 +109,8 @@ void FindRoot(TETRARTREENODE* rootp)
 		}
 		printf("\n\n");
 	}*/
-	
-	
+
+
 	/**
 	 * Print TetrR-tree hierachical information.
 	 */
@@ -134,7 +134,7 @@ void EmptyNode(pTETRARTREENODE p)
 {
 	int node=p->nodeid;
 	InitNode(p);
-	
+
 	clock_t tStart = clock();
 	fseek(index_file,(node-1)*sizeof(TETRARTREENODE),0);
 	fwrite(p,sizeof(TETRARTREENODE),1,index_file);
@@ -164,9 +164,9 @@ void _TetraRTreeInitPart( TETRARTREEPARTITION *p, int maxrects, int minfill)
  p->coverOrientation[0].max = 0.0;
  p->coverOrientation[1].min = 0.0;
  p->coverOrientation[1].max = 0.0;
- 
+
  p->alloverScore[0] = p->alloverScore[1] = (REALTYPE)0;
- p->total = maxrects;//×î´ó·ÖÖ§Êý
+ p->total = maxrects;//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö§ï¿½ï¿½
  p->minfill = minfill;
  for (i=0; i<maxrects; i++)
  {
@@ -183,7 +183,7 @@ void _TetraRTreeInitPart( TETRARTREEPARTITION *p, int maxrects, int minfill)
 {
  int i, j;
  MBR new_rect;
- 
+
  // Sanity checks
  if (INVALID_RECT(rc1))
   return *rc2;
@@ -196,7 +196,7 @@ void _TetraRTreeInitPart( TETRARTREEPARTITION *p, int maxrects, int minfill)
   new_rect.bound[i] = MIN(rc1->bound[i], rc2->bound[i]);
   j = i + DIMS_NUMB;
   new_rect.bound[j] = MAX(rc1->bound[j], rc2->bound[j]);
- } 
+ }
  return new_rect;
 }
 
@@ -210,9 +210,9 @@ MBR EncloseMBRs(MBR* mbrs)
 	MBR rect;
 	for(int j=0; j<MBR_NUMB; j++)
 	{
-		if(j==0) 
+		if(j==0)
 		{
-			for(int i=0; i<SIDES_NUMB; i++) 
+			for(int i=0; i<SIDES_NUMB; i++)
 				rect.bound[i]=mbrs[j].bound[i];
 		}
 		else rect = CombineMBR(&rect, &(mbrs[j]));
@@ -230,19 +230,19 @@ MBR EncloseMBRs(MBR* mbrs)
 REALTYPE CombineMBRTetrad(MBR *new_mbrs, MBR *mbrs1, MBR *mbrs2)
 {
     clock_t tStart = clock();
-    
+
 	std::set<int> available_indexes = {0, 1, 2, 3};
 	REALTYPE sum_waste = 0.0;
 	MBR min_mbr;
 	int min_idx = 0;
-	
+
 	for(size_t i=0; i<MBR_NUMB; i++)
 	{
 		REALTYPE min_waste = DOUBLE_MAX;
 		min_idx = -1;
 		for(auto j : available_indexes)
 		{
-			//check j is dominated by pre_j or not 
+			//check j is dominated by pre_j or not
 			/*if(min_idx>=0 and
 			   ((mbrs2[j].bound[0] < min_mbr.bound[0] && mbrs2[j].bound[3] > min_mbr.bound[3]) or
 			   (mbrs2[j].bound[2] > min_mbr.bound[2] && mbrs2[j].bound[3] > min_mbr.bound[3]) or
@@ -254,7 +254,7 @@ REALTYPE CombineMBRTetrad(MBR *new_mbrs, MBR *mbrs1, MBR *mbrs2)
 				REALTYPE waste = RectSphericalVolume(&cover_mbr);
 				if(waste < min_waste)
 				{
-					min_idx = j; 
+					min_idx = j;
 					min_waste = waste;
 					min_mbr = cover_mbr;
 				}
@@ -273,21 +273,21 @@ REALTYPE CombineMBRTetrad(MBR *new_mbrs, MBR *mbrs1, MBR *mbrs2)
 
 
 
-/** 
+/**
  * Calculate the angle between two directions in clockwise direction.
  * The return value is in [0, 2PI]
  */
-REALTYPE CalculateAngleClockwise(REALTYPE thetaS, REALTYPE thetaE) 
+REALTYPE CalculateAngleClockwise(REALTYPE thetaS, REALTYPE thetaE)
 {
 	//angle is in [0, PI) x1*y1+x2*y2
 	REALTYPE angle = acos(sin(thetaS)*sin(thetaE) + cos(thetaS)*cos(thetaE));
-	
+
 	/**
-	 * cross multipleply x1*y2+x2*y1 = |a|*|b|*sin<a,b> right hand rule, 
+	 * cross multipleply x1*y2+x2*y1 = |a|*|b|*sin<a,b> right hand rule,
 	 * counter clockwise
 	 */
-	REALTYPE cross = sin(thetaS)*cos(thetaE) + cos(thetaS)*sin(thetaE);  
-	if(cross>0) return 2*3.1415926-angle; 
+	REALTYPE cross = sin(thetaS)*cos(thetaE) + cos(thetaS)*sin(thetaE);
+	if(cross>0) return 2*3.1415926-angle;
 	else return angle;
 }
 
@@ -328,12 +328,12 @@ MBO CombineMBO(MBO* mbo1, MBO* mbo2)
 {
 	assert(node);
 	assert(br);
-	
+
 	/**
 	 * pointer childid.
 	 */
 	br->childid = node->nodeid;
-	
+
 	/**
 	 * mbr.
 	 */
@@ -343,14 +343,14 @@ MBO CombineMBO(MBO* mbo1, MBO* mbo2)
 	{
 		CombineMBRTetrad(br->mbrs, br->mbrs, node->branch[i].mbrs);
 	}
-	
+
 	/**
 	 * orientation.
 	 */
 	br->orientation = node->branch[0].orientation;
 	for(int i=1; i<node->count; i++)
 	{
-		br->orientation = CombineMBO(&(br->orientation), 
+		br->orientation = CombineMBO(&(br->orientation),
 		                             &(node->branch[i].orientation));
 	}
 }
@@ -370,7 +370,7 @@ MBO CombineMBO(MBO* mbo1, MBO* mbo2)
 
  if (INVALID_RECT(mbr))
   return (REALTYPE) 0;
- 
+
  for (i=0; i<DIMS_NUMB; i++) {
   REALTYPE half_extent = (mbr->bound[i+DIMS_NUMB] - mbr->bound[i]) / 2;
   sum_of_squares += half_extent * half_extent;
@@ -385,14 +385,14 @@ MBO CombineMBO(MBO* mbo1, MBO* mbo2)
 /**
  * Load branch buffer with branches from full node plus the extra branch.
  */
-void _RTreeGetBranches(HTETRARTREEROOT root, 
-                              TETRARTREENODE *node, 
+void _RTreeGetBranches(HTETRARTREEROOT root,
+                              TETRARTREENODE *node,
 							  TETRARTREEBRANCH *br)
 {
  int i;
 
  assert(node && br);
- 
+
  /* load the branch buffer */
  for (i=0; i<MAXKIDS(node); i++)
  {
@@ -416,24 +416,24 @@ void _RTreeGetBranches(HTETRARTREEROOT root,
  //EmptyNode(node); //Important
 }
 
- 
 
- 
+
+
 
 /**
  * Put a branch in one of the groups.
  */
-void _RTreeClassify(HTETRARTREEROOT root, int i, int group, 
+void _RTreeClassify(HTETRARTREEROOT root, int i, int group,
                            TETRARTREEPARTITION *p)
 {
  assert(p);
- assert(!p->taken[i]);//Ç°Ìá¶¼ÉÐÎ´·Ö×é
+ assert(!p->taken[i]);//Ç°ï¿½á¶¼ï¿½ï¿½Î´ï¿½ï¿½ï¿½ï¿½
 
- p->partition[i] = group;//µÚi¸ö·ÖÖ§ÊôÓÚµÚgroup×é
- p->taken[i] = TRUE;//µÚi¸ö·ÖÖ§ÒÑ·Ö¹ý×é
+ p->partition[i] = group;//ï¿½ï¿½iï¿½ï¿½ï¿½ï¿½Ö§ï¿½ï¿½ï¿½Úµï¿½groupï¿½ï¿½
+ p->taken[i] = TRUE;//ï¿½ï¿½iï¿½ï¿½ï¿½ï¿½Ö§ï¿½Ñ·Ö¹ï¿½ï¿½ï¿½
 
- ////////////////////////////////////////////////////////////¼ÆËãÁ½×éµÄmbrÖµ×ÜºÍ
- if (p->count[group] == 0)//µ±µÚgroup×é·ÖÖ§ÊýÎªÁãÊ±
+ ////////////////////////////////////////////////////////////ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½mbrÖµï¿½Üºï¿½
+ if (p->count[group] == 0)//ï¿½ï¿½ï¿½ï¿½groupï¿½ï¿½ï¿½ï¿½Ö§ï¿½ï¿½Îªï¿½ï¿½Ê±
  {
 	 for(int j=0; j<MBR_NUMB; j++)
 	 {
@@ -461,34 +461,34 @@ void _TetraRTreePickSeeds(HTETRARTREEROOT root, TETRARTREEPARTITION *p)
  REALTYPE worst, spatial_waste;
 
  worst = 0 - std::numeric_limits<float>::max();
- 
+
  //MBR rect_i, rect_j, combine_rect;
  //REALTYPE area_i, area_j;
  MBR cover_mbrs[MBR_NUMB];
- 
- for (i=0; i<p->total-1; i++)//É¨Ãè¸÷¸ö·ÖÖ§£¬Á½Á½×éºÏ£¬¼ÆËãwaste{area(A+B)-area(A)-area(B)}Öµ×î´óµÄÒ»¶Ô
+
+ for (i=0; i<p->total-1; i++)//É¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö§ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï£ï¿½ï¿½ï¿½ï¿½ï¿½waste{area(A+B)-area(A)-area(B)}Öµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½
  {
   for (j=i+1; j<p->total; j++)
-  {	  
+  {
 	  /**
        * Optimize based on the waste spaces of four mbrs of TetrR-tree node
 	   */
 	  spatial_waste = CombineMBRTetrad(cover_mbrs, root->BranchBuf[i].mbrs, root->BranchBuf[j].mbrs);
-	  
+
 	  /**
        * Combine orientation into the optimization.
 	   */
 	   /*MBO combined_mbo = CombineMBO(&(root->BranchBuf[i].orientation), &(root->BranchBuf[j].orientation));
-	
-	   REALTYPE angle_waste = CalculateAngleClockwise(combined_mbo.min, combined_mbo.max) - 
-	                          CalculateAngleClockwise(root->BranchBuf[i].orientation.min, 
-			                                          root->BranchBuf[i].orientation.max) - 
-							  CalculateAngleClockwise(root->BranchBuf[j].orientation.min, 
+
+	   REALTYPE angle_waste = CalculateAngleClockwise(combined_mbo.min, combined_mbo.max) -
+	                          CalculateAngleClockwise(root->BranchBuf[i].orientation.min,
+			                                          root->BranchBuf[i].orientation.max) -
+							  CalculateAngleClockwise(root->BranchBuf[j].orientation.min,
 			                                          root->BranchBuf[j].orientation.max);
 	  spatial_waste = spatial_waste*0.5 + angle_waste*0.5; // update
 	  */
-	
-	  
+
+
 	   /**
 		* Optimize based on the waste area of the mbrs of quadrilaterals
 		* Same as R-trees
@@ -499,7 +499,7 @@ void _TetraRTreePickSeeds(HTETRARTREEROOT root, TETRARTREEPARTITION *p)
 		area_i = RectSphericalVolume(&rect_i);
 		area_j = RectSphericalVolume(&rect_j);
 		spatial_waste = RectSphericalVolume(&combine_rect) - area_i - area_j;*/
-	  	  
+
 	   if (spatial_waste > worst)
 	   {
 		worst = spatial_waste;
@@ -527,8 +527,8 @@ void _TetraRTreePickSeeds(HTETRARTREEROOT root, TETRARTREEPARTITION *p)
  * fill requirement) then other group gets the rest.
  * These last are the ones that can go in either group most easily.
  */
-void _RTreeMethodZero(HTETRARTREEROOT root, 
-                             TETRARTREEPARTITION *p, 
+void _RTreeMethodZero(HTETRARTREEROOT root,
+                             TETRARTREEPARTITION *p,
 							 int minfill )
 {
  int i;
@@ -538,11 +538,11 @@ void _RTreeMethodZero(HTETRARTREEROOT root,
 
  _TetraRTreeInitPart(p, root->BranchCount, minfill);
  _TetraRTreePickSeeds(root, p);
- 
+
  MBR* pcover_group0 = &(p->cover[0][0]);
  MBR* pcover_group1 = pcover_group0 + MBR_NUMB;
- while (p->count[0] + p->count[1] < p->total && 
-  p->count[0] < p->total - p->minfill && 
+ while (p->count[0] + p->count[1] < p->total &&
+  p->count[0] < p->total - p->minfill &&
   p->count[1] < p->total - p->minfill)
  {
 	 biggestDiff = (REALTYPE)-1;
@@ -562,12 +562,12 @@ void _RTreeMethodZero(HTETRARTREEROOT root,
 				 group = 1;
 				 diff = -diff; //Get the absolute value.
 			 }
-			 
+
 			 /**
 			  * This method consider node grouping order.
 			  * Group the node with the biggest diff first.
-			  * If there are two nodes have the same diff, then group the node 
-			  *    first whose group has less number of nodes trying to balance the 
+			  * If there are two nodes have the same diff, then group the node
+			  *    first whose group has less number of nodes trying to balance the
 			  *    number of nodes of the two groups.
 			  */
 			 if (diff > biggestDiff)
@@ -583,8 +583,8 @@ void _RTreeMethodZero(HTETRARTREEROOT root,
 			 }
 		 }//end if taken
 	 }//end for
-	 
-	 _RTreeClassify(root, chosen, betterGroup, p);       
+
+	 _RTreeClassify(root, chosen, betterGroup, p);
  }//end while
 
  /* if one group too full, put remaining rects in the other */
@@ -594,14 +594,14 @@ void _RTreeMethodZero(HTETRARTREEROOT root,
    group = 1;
   else
    group = 0;
-  
+
   for (i=0; i<p->total; i++)
   {
    if (!p->taken[i])
     _RTreeClassify(root, i, group, p);
   }
  }
- 
+
  assert(p->count[0] + p->count[1] == p->total);
  assert(p->count[0] >= p->minfill && p->count[1] >= p->minfill);
 }
@@ -612,7 +612,7 @@ void _RTreeMethodZero(HTETRARTREEROOT root,
 /**
  * Copy branches from the buffer into two nodes according to the partition.
  */
-void _RTreeLoadNodes(HTETRARTREEROOT root, TETRARTREENODE *n, 
+void _RTreeLoadNodes(HTETRARTREEROOT root, TETRARTREENODE *n,
                             TETRARTREENODE *q, TETRARTREEPARTITION *p)
 {
  int i;
@@ -627,7 +627,7 @@ void _RTreeLoadNodes(HTETRARTREEROOT root, TETRARTREENODE *n,
   else if (p->partition[i] == 1)
    AddBranch(root, &root->BranchBuf[i], q, NULL);
  }*/
- 
+
  for (i=0; i<p->total; i++)
  {
 	assert(p->partition[i] == 0 || p->partition[i] == 1);
@@ -660,13 +660,13 @@ void _RTreeLoadNodes(HTETRARTREEROOT root, TETRARTREENODE *n,
  * Old node is one of the new ones, and one really new one is created.
  * Tries more than one method for choosing a partition, uses best result.
  */
-void SplitNode(HTETRARTREEROOT root, TETRARTREENODE *node, 
+void SplitNode(HTETRARTREEROOT root, TETRARTREENODE *node,
                TETRARTREEBRANCH *br, TETRARTREENODE **new_node)
 {
  TETRARTREEPARTITION *p; //TODO: make it as output otherwise it will make recomputations for the allover MBRs/MBO info.
  //int level;
  assert(node && br);
- 
+
  /* load all the branches into a buffer (root->BranchBuf)*/
  //level = node->level; //
  _RTreeGetBranches(root, node, br);
@@ -679,14 +679,16 @@ void SplitNode(HTETRARTREEROOT root, TETRARTREENODE *node,
  _RTreeMethodZero(root, p, (node->level>0 ? MINNODEFILL : MINLEAFFILL));
 
 
- /** 
-  * Put branches from buffer into 2 nodes (storing in node and new_node) 
+ /**
+  * Put branches from buffer into 2 nodes (storing in node and new_node)
   * according to chosen partition.
   * For node, its nodeid, taken, level are not necessary to be changed.
   * For new_node, newly create.
   */
+  for(int bri=0; bri<MAXCARD; bri++) 
+	  InitBranch(&(node->branch[bri]));
   node->count = 0; //Initialize the count of node.
-  
+
   /* Newly create new_node. */
  *new_node = (TETRARTREENODE*)malloc(sizeof(TETRARTREENODE));
  InitNode(*new_node);
@@ -706,6 +708,8 @@ void SplitNode(HTETRARTREEROOT root, TETRARTREENODE *node,
 
  _RTreeLoadNodes(root, node, *new_node, p);
 
+ /*std::cout << "SplitNode\t node id: " << node->nodeid << "count: " << node->count
+           <<"\t new_node id: " << (*new_node)->nodeid << "count: " << (*new_node)->count <<std::endl;*/
  assert(node->count+(*new_node)->count == p->total);
 }
 
@@ -716,12 +720,12 @@ void SplitNode(HTETRARTREEROOT root, TETRARTREENODE *node,
  * Returns 1 if node split, sets *new_node to address of new node.
  * Old node updated, becomes one of two.
  */
- int AddBranch(HTETRARTREEROOT root, TETRARTREEBRANCH *br, 
+ int AddBranch(HTETRARTREEROOT root, TETRARTREEBRANCH *br,
                TETRARTREENODE *node, TETRARTREENODE **new_node)
 {
  int i;
  assert(br && node);
- 
+
  if (node->count < MAXKIDS(node))  /* split won&apos;t be necessary */
  {
   for (i = 0; i < MAXKIDS(node); i++)  /* find empty branch */
@@ -729,10 +733,10 @@ void SplitNode(HTETRARTREEROOT root, TETRARTREENODE *node,
    if (node->branch[i].childid == 0)
    {
     CopyBranch(&(node->branch[i]),br);
-    node->count++; 
-	
+    node->count++;
+
 	clock_t tStart = clock();
-	CombineMBRTetrad(node->branch[i].mbrs, node->branch[i].mbrs, br->mbrs); //Update 
+	CombineMBRTetrad(node->branch[i].mbrs, node->branch[i].mbrs, br->mbrs); //Update
     node->branch[i].orientation = CombineMBO(&(br->orientation), &(node->branch[i].orientation));
 	fseek(index_file,(node->nodeid-1)*sizeof(TETRARTREENODE),0);
 	fwrite(node,sizeof(TETRARTREENODE),1,index_file);
@@ -748,7 +752,7 @@ void SplitNode(HTETRARTREEROOT root, TETRARTREENODE *node,
 
   return 0;
  }
- 
+ //std::cout<<"add branch split\n";
  assert(new_node);
  SplitNode(root, node, br, new_node);
  return 1;
@@ -768,15 +772,15 @@ int RTreePickBranch( TETRARTREEBRANCH * pbranch, TETRARTREENODE *node)
  //MBR *r;
  MBR * mbrs = pbranch->mbrs;
  //MBO mbo = pbranch->orientation;
- 
+
  int i, first_time = 1;
  REALTYPE increase, bestIncr=(REALTYPE)-1, area, bestArea=0;
  int best=0;
  assert(mbrs && node);
- 
+
  //MBR rect_mbrs, rect_branchmbrs, combine_rect;
  MBR tmp_rects[MBR_NUMB];
- 
+
  for (i=0; i<MAXKIDS(node); i++)
  {
   if (node->branch[i].childid)
@@ -785,26 +789,26 @@ int RTreePickBranch( TETRARTREEBRANCH * pbranch, TETRARTREENODE *node)
     * Optimize based on the waste spaces of four mbrs of TetrR-tree node
 	*/
 	increase = CombineMBRTetrad(tmp_rects, mbrs, node->branch[i].mbrs);
-	
+
 	/**
      * Combine orientation into the optimization
 	 */
 	/*MBO combined_mbo = CombineMBO(&mbo, &(node->branch[i].orientation));
-	
-	REALTYPE angle_increase = CalculateAngleClockwise(combined_mbo.min, combined_mbo.max) - 
-	                          CalculateAngleClockwise(node->branch[i].orientation.min, 
+
+	REALTYPE angle_increase = CalculateAngleClockwise(combined_mbo.min, combined_mbo.max) -
+	                          CalculateAngleClockwise(node->branch[i].orientation.min,
 			                                          node->branch[i].orientation.max);
 	increase = increase*0.5 + angle_increase*0.5; // update
 	*/
-	
+
    /**
     * Calculate sum of the areas of the four MBRs of branch i.
 	*/
    area = 0.0;
    for(int j=0; j<MBR_NUMB; j++)
 	   area += RectSphericalVolume(&(node->branch[i].mbrs[j]));
-   
-   
+
+
    /**
     * Optimize based on the waste area of the mbrs of quadrilaterals
 	* Same as R-trees
@@ -814,8 +818,8 @@ int RTreePickBranch( TETRARTREEBRANCH * pbranch, TETRARTREENODE *node)
 	combine_rect = CombineMBR(&rect_mbrs, &rect_branchmbrs);
 	area = RectSphericalVolume(&rect_branchmbrs);
 	increase = RectSphericalVolume(&combine_rect) - area;*/
-	
-	
+
+
    if (increase < bestIncr || first_time)
    {
     best = i;
@@ -861,14 +865,14 @@ void CopyMBO(MBO* mbo1, MBO* mbo2)
 }
 
 
-void PARTITION2Branches(HTETRARTREEROOT root, 
+void PARTITION2Branches(HTETRARTREEROOT root,
                         TETRARTREEBRANCH *b1, int nodeid1,
 						TETRARTREEBRANCH *b2, int nodeid2)
 {
 	b1->childid = nodeid1;
 	CopyMBRs(b1->mbrs, root->Partitions[0].cover[0]);
 	CopyMBO(&(b1->orientation), &(root->Partitions[0].coverOrientation[0]));
-	
+
 	b2->childid = nodeid2;
 	CopyMBRs(b2->mbrs, root->Partitions[0].cover[1]);
 	CopyMBO(&(b2->orientation), &(root->Partitions[0].coverOrientation[1]));
@@ -885,7 +889,7 @@ void PARTITION2Branches(HTETRARTREEROOT root,
  * The level argument specifies the number of steps up from the leaf
  * level to insert; e.g. a data rectangle goes in at level = 0.
  */
- int _RTreeInsertRect(HTETRARTREEROOT root, TETRARTREEBRANCH *pbranch,  
+ int _RTreeInsertRect(HTETRARTREEROOT root, TETRARTREEBRANCH *pbranch,
                       TETRARTREENODE *node, TETRARTREENODE **new_node, int level)
 {
  int i;
@@ -905,11 +909,11 @@ void PARTITION2Branches(HTETRARTREEROOT root,
   fseek(index_file,(node->branch[i].childid-1)*sizeof(TETRARTREENODE),0);
   fread(&child,sizeof(TETRARTREENODE),1,index_file);
   index_node_read_num++;
-  
+
   if (!_RTreeInsertRect(root, pbranch, &child, &n2, level))
   {
    /* child was not split */
-   /*if(node->branch[i].childid==0)
+   if(node->branch[i].childid==0)
    {
 	   node->branch[i].childid=pbranch->childid;
    }
@@ -918,24 +922,39 @@ void PARTITION2Branches(HTETRARTREEROOT root,
 
    fseek(index_file,(node->nodeid-1)*sizeof(TETRARTREENODE),0);
    fwrite(node,sizeof(TETRARTREENODE),1,index_file);
-   //std::cout << "nodeid: " << node->nodeid
-   //				  << "\t cout: " << node->count
-   //				  << "\t level: " << node->level << std::endl;
-   fflush(index_file);*/
+   /*std::cout << "nodeid: " << node->nodeid
+   				  << "\t cout: " << node->count
+   				  << "\t level: " << node->level 
+				  << "\tbranch i: " << i
+				  << "\t pbranch->childid: " << pbranch->childid
+				  << std::endl;*/
+   fflush(index_file);
    return 0;
   }
-  
+
   /* child was split */
-  TetraRTreeNodeCover(&(node->branch[i]), &child);
-  TetraRTreeNodeCover(&b, n2);
+  //TetraRTreeNodeCover(&(node->branch[i]), &child);
+  //TetraRTreeNodeCover(&b, n2);
   /**
    * Copy the allover info of the two groups (in root->partions) to the two branches:
    * node->branch[i] and b.
    */
-  //PARTITION2Branches(root, &(node->branch[i]), child.nodeid, &b, n2->nodeid);
-  
-  return AddBranch(root, &b, node, new_node);
- } 
+  PARTITION2Branches(root, &(node->branch[i]), child.nodeid, &b, n2->nodeid);
+	/*std::cout << "_RTreeInsertRect0\t node id: " << node->nodeid << " count: " << node->count
+            <<"\t new_node id: " << (*new_node)->nodeid << " count: " << (*new_node)->count <<std::endl;*/
+
+	int ret_split = AddBranch(root, &b, node, new_node);
+
+	//if(ret_split==1)
+	/*std::cout << "_RTreeInsertRect1\t pbranch->childid: " << pbranch->childid
+			  << "\tbranch i: " << i
+              << "\t node id: " << node->nodeid << " count: " << node->count
+              << "\t new_node id: " << (*new_node)->nodeid << " count: " << (*new_node)->count 
+			  << "\t child id: " << child.nodeid 
+			  << "\t n2 id: " << n2->nodeid
+			  << "\tret_split: "<<ret_split<<std::endl;*/
+  return ret_split;
+ }
  else if (node->level == level) /* Have reached level for insertion. Add mbr, split if necessary */
  {
   CopyBranch(&b,pbranch);
@@ -944,7 +963,7 @@ void PARTITION2Branches(HTETRARTREEROOT root,
 
   return AddBranch(root, &b, node, new_node);
  }
- 
+
  /* Not supposed to happen */
  assert (FALSE);
  return 0;
@@ -958,28 +977,29 @@ void PARTITION2Branches(HTETRARTREEROOT root,
 
 
 
-void build_index(FILE* &object_file, FILE* &index_file) 
+void build_index(FILE* &object_file, FILE* &index_file)
 {
 	std::vector<REALTYPE> quadrilateral(8);
 	REALTYPE timestamp;
 	REALTYPE azimuth;
-	
+
 	int countdataid = 0; //initionalize zero
-	
-	
+
+
 	while(!feof(object_file))
 	{
-		fscanf(object_file, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n", 
-		&quadrilateral[0], &quadrilateral[1], &quadrilateral[2], &quadrilateral[3], 
-		&quadrilateral[4], &quadrilateral[5], &quadrilateral[6], &quadrilateral[7], 
+		fscanf(object_file, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
+		&quadrilateral[0], &quadrilateral[1], &quadrilateral[2], &quadrilateral[3],
+		&quadrilateral[4], &quadrilateral[5], &quadrilateral[6], &quadrilateral[7],
 		&azimuth, &timestamp);
 		countdataid++;
+		//if(countdataid==8250) break;
 		
 		TETRARTREEBRANCH branch;
-		/** 
+		/**
 		 * Set the branch to contain the quadrilateral object.
-         */		 
-		branch.childid = countdataid; 
+         */
+		branch.childid = countdataid;
 		for(int i=0; i<4; i++) //for each point of the quadrilateral
 		{
 			branch.mbrs[i].bound[0] = quadrilateral[i*2+1]; //minX <- Longitude
@@ -998,25 +1018,25 @@ void build_index(FILE* &object_file, FILE* &index_file)
 		branch.orientation.min = azimuth;
 		branch.orientation.max = azimuth;
 
-		
-		TETRARTREEROOT root; 
+
+		TETRARTREEROOT root;
 		root.root_node=(TETRARTREENODE*)malloc(sizeof(TETRARTREENODE));
 		InitNode(root.root_node);
-		
+
 		fseek(index_file,0L,SEEK_END);
 		long leng=ftell(index_file);
-		if(leng==0) 
-		{   
+		if(leng==0)
+		{
 			/*Write the first index node.*/
 			root.root_node->taken=1;
-			root.root_node->nodeid=1; 
+			root.root_node->nodeid=1;
 			index_root_id = root.root_node->nodeid;
 			root.root_node->level=0;
 			root.root_node->count=1;
 			CopyBranch(&(root.root_node->branch[0]), &branch);
-			
+
 			clock_t tStart = clock();
-			fseek(index_file,0L,0); 
+			fseek(index_file,0L,0);
 			fwrite(root.root_node,sizeof(TETRARTREENODE),1,index_file);
 			index_node_write_num++;
             index_node_write_time += (double)(clock() - tStart)/CLOCKS_PER_SEC;
@@ -1028,7 +1048,7 @@ void build_index(FILE* &object_file, FILE* &index_file)
 		else
 		{
 			FindRoot(root.root_node); //Read the root node from disk.
-			
+
 			/**
 			 * In the following, insert the branch into the index.
 			 */
@@ -1036,17 +1056,17 @@ void build_index(FILE* &object_file, FILE* &index_file)
 			TETRARTREENODE *newnode;
 			TETRARTREEBRANCH b;
 			InitBranch(&b);
-			
-			if (_RTreeInsertRect(&root, &branch, root.root_node, &newnode, 0))  
+
+			if (_RTreeInsertRect(&root, &branch, root.root_node, &newnode, 0))
 			{
 				/* root is splitted */
-				
+
 				/* Create a new root, and tree grows taller */
-				newroot=(TETRARTREENODE*)malloc(sizeof(TETRARTREENODE)); 
+				newroot=(TETRARTREENODE*)malloc(sizeof(TETRARTREENODE));
 				InitNode(newroot);
 				newroot->taken=1;
 				newroot->level = root.root_node->level + 1;
-				
+
 				/* Find the first index node slot on the disk */
 				int ftaken;
 				fseek(index_file,0L,SEEK_END);
@@ -1061,16 +1081,33 @@ void build_index(FILE* &object_file, FILE* &index_file)
 				newroot->nodeid=i/sizeof(TETRARTREENODE)+1;
 				index_root_id = newroot->nodeid; // Update index root node id.
 				newroot->count = 2;
-				
-				PARTITION2Branches(&root, &(newroot->branch[0]), root.root_node->nodeid, 
+
+				PARTITION2Branches(&root, &(newroot->branch[0]), root.root_node->nodeid,
 				                          &(newroot->branch[1]), newnode->nodeid);
-										  
+
+				std::cout << "root-nodeid: " << newroot->nodeid
+					  << "\t cout: " << newroot->count
+					  << "\t level: " << newroot->level 
+					  << "\t countdataid: " << countdataid << std::endl;
+
+				for(int bri=0; bri<newroot->count; bri++)
+				{
+					for(int pi=0; pi<MBR_NUMB; pi++)
+					{
+						for(int pj=0;pj<SIDES_NUMB;pj++)
+						{
+							std::cout << newroot->branch[bri].mbrs[pi].bound[pj] << ", ";
+						}
+						std::cout << std::endl;
+					}
+					std::cout << std::endl<<std::endl;
+				}
 				/*Add root.root_node as a branch of newroot*/
 				//TetraRTreeNodeCover(&b, root.root_node);
 				//fseek(index_file,0L,SEEK_END);
 				//AddBranch(&root, &b, newroot, NULL);
-				
-				
+
+
 				/*Add newnode as a branch of newroot*/
 				//TetraRTreeNodeCover(&b, newnode);
 				//AddBranch(&root, &b, newroot, NULL);
@@ -1088,20 +1125,18 @@ void build_index(FILE* &object_file, FILE* &index_file)
 					  << "\t cout: " << newnode->count
 					  << "\t level: " << newnode->level << std::endl;*/
 				//fflush(index_file);
-				
+
 				clock_t tStart = clock();
 				fseek(index_file,((newroot->nodeid)-1)*sizeof(TETRARTREENODE),0);
 				fwrite(newroot, sizeof(TETRARTREENODE),1,index_file);
+				fflush(index_file);
 				index_node_write_num++;
 				index_node_write_time += (double)(clock() - tStart)/CLOCKS_PER_SEC;
 
-				Copy(root.root_node , newroot);
+				Copy(root.root_node, newroot);
 				delete newroot;
 			 }//END IF
 		 }//end else if leng==0
 		 delete root.root_node;
 	} //end while result->next()
 }
-
-
-
