@@ -31,6 +31,8 @@ extern double index_node_write_time;
 extern long CombineMBRTetrad_invoke_num;
 extern double CombineMBRTetrad_invoke_time;
 
+REALTYPE pre_growthes0[MAXCARD];
+REALTYPE pre_growthes1[MAXCARD];
 
 
 //Copy a branch to another branch: b1 <- b2
@@ -510,6 +512,9 @@ void _TetraRTreePickSeeds(HTETRARTREEROOT root, TETRARTREEPARTITION *p)
  }
  _RTreeClassify(root, seed0, 0, p);
  _RTreeClassify(root, seed1, 1, p);
+ 
+ pre_growthes0[seed0] = 0.0;
+ pre_growthes1[seed1] = 0.0;
 }
 
 
@@ -538,6 +543,12 @@ void _RTreeMethodZero(HTETRARTREEROOT root,
 
  _TetraRTreeInitPart(p, root->BranchCount, minfill);
  _TetraRTreePickSeeds(root, p);
+ 
+ 
+ //REALTYPE* pre_growthes0 = (REALTYPE*)malloc(sizeof(REALTYPE)*p->total);
+ //REALTYPE* pre_growthes1 = (REALTYPE*)malloc(sizeof(REALTYPE)*p->total);
+ //for(int gi=0; gi<MAXCARD; gi++) {pre_growthes0[gi] = 0.0; pre_growthes1[gi] = 0.0;}
+ int pre_selectedGroup = -1;
 
  MBR* pcover_group0 = &(p->cover[0][0]);
  MBR* pcover_group1 = pcover_group0 + MBR_NUMB;
@@ -553,8 +564,28 @@ void _RTreeMethodZero(HTETRARTREEROOT root,
 			 MBR *r = root->BranchBuf[i].mbrs;
 			 MBR rect_0[MBR_NUMB], rect_1[MBR_NUMB];
 			 REALTYPE growth0, growth1, diff;
-			 growth0 = CombineMBRTetrad(rect_0, r, pcover_group0);
-			 growth1 = CombineMBRTetrad(rect_1, r, pcover_group1);
+			 
+			 /* begin touching */
+			 //growth0 = CombineMBRTetrad(rect_0, r, pcover_group0);
+			 //growth1 = CombineMBRTetrad(rect_1, r, pcover_group1);
+			 if(p->count[0] + p->count[1]==2)
+			 {
+				 // For the first pass.
+				 pre_growthes0[i] = CombineMBRTetrad(rect_0, r, pcover_group0);
+				 pre_growthes1[i] = CombineMBRTetrad(rect_1, r, pcover_group1);
+			 }
+			 else if (pre_selectedGroup==0)
+			 {
+				 pre_growthes0[i] = CombineMBRTetrad(rect_0, r, pcover_group0);
+			 }
+			 else if (pre_selectedGroup==1)
+			 {
+				 pre_growthes1[i] = CombineMBRTetrad(rect_1, r, pcover_group1);
+			 }
+			 growth0 = pre_growthes0[i];
+			 growth1 = pre_growthes1[i];
+			 /* end touching */
+			 
 			 diff = growth1 - growth0;
 			 if (diff >= 0) group = 0; //Choose the group with smaller waste area.
 			 else
@@ -585,6 +616,7 @@ void _RTreeMethodZero(HTETRARTREEROOT root,
 	 }//end for
 
 	 _RTreeClassify(root, chosen, betterGroup, p);
+	 pre_selectedGroup = betterGroup;
  }//end while
 
  /* if one group too full, put remaining rects in the other */
@@ -602,6 +634,9 @@ void _RTreeMethodZero(HTETRARTREEROOT root,
   }
  }
 
+ //delete pre_growthes0;
+ //delete pre_growthes1;
+ 
  assert(p->count[0] + p->count[1] == p->total);
  assert(p->count[0] >= p->minfill && p->count[1] >= p->minfill);
 }
