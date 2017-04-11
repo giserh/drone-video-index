@@ -26,7 +26,9 @@ extern FILE* index_file;
 extern int index_root_id; //The id of root index node.
 extern int index_node_read_num;
 extern int index_node_write_num;
+extern int taken_read_num;
 extern double index_node_read_time;
+extern double taken_read_time;
 extern double index_node_write_time;
 extern long CombineMBRTetrad_invoke_num;
 extern double CombineMBRTetrad_invoke_time;
@@ -92,9 +94,12 @@ void InitNode(pTETRARTREENODE p)
 
 void FindRoot(TETRARTREENODE* rootp)
 {
+	clock_t tStart = clock();
 	fseek(index_file,(index_root_id-1)*sizeof(TETRARTREENODE),0);
 	fread(rootp,sizeof(TETRARTREENODE),1,index_file);
 	index_node_read_num++;
+	index_node_read_time += (double)(clock() - tStart)/CLOCKS_PER_SEC;
+	
 	/**
 	 * Print root index node information.
 	 */
@@ -682,6 +687,7 @@ void _RTreeLoadNodes(HTETRARTREEROOT root, TETRARTREENODE *n,
  fwrite(n,sizeof(TETRARTREENODE),1,index_file);
  fseek(index_file,(q->nodeid-1)*sizeof(TETRARTREENODE),0);
  fwrite(q,sizeof(TETRARTREENODE),1,index_file);
+ fflush(index_file);
  index_node_write_num += 2;
  index_node_write_time += (double)(clock() - tStart)/CLOCKS_PER_SEC;
 }
@@ -730,6 +736,8 @@ void SplitNode(HTETRARTREEROOT root, TETRARTREENODE *node,
  (*new_node)->level = node->level; //Have the same level as node.
  int i,ftaken=2;
  long filelen;
+ 
+ clock_t tStart = clock();
  fseek(index_file,0L,SEEK_END);
  filelen=ftell(index_file);
  for(i=0;i<(int)filelen;i=i+sizeof(TETRARTREENODE))
@@ -738,6 +746,9 @@ void SplitNode(HTETRARTREEROOT root, TETRARTREENODE *node,
 	 fread(&ftaken,sizeof(int),1,index_file);//
 	 if(ftaken==0) break;
  }
+ taken_read_num++;
+ taken_read_time += (double)(clock() - tStart)/CLOCKS_PER_SEC;
+	
  (*new_node)->nodeid=i/sizeof(TETRARTREENODE)+1;
  (*new_node)->taken=1;
 
@@ -770,17 +781,17 @@ void SplitNode(HTETRARTREEROOT root, TETRARTREENODE *node,
     CopyBranch(&(node->branch[i]),br);
     node->count++;
 
-	//clock_t tStart = clock();
+	clock_t tStart = clock();
 	//CombineMBRTetrad(node->branch[i].mbrs, node->branch[i].mbrs, br->mbrs); //Update
     //node->branch[i].orientation = CombineMBO(&(br->orientation), &(node->branch[i].orientation));
 	fseek(index_file,(node->nodeid-1)*sizeof(TETRARTREENODE),0);
 	fwrite(node,sizeof(TETRARTREENODE),1,index_file);
-	//index_node_write_num++;
-    //index_node_write_time += (double)(clock() - tStart)/CLOCKS_PER_SEC;
+	fflush(index_file);
+	index_node_write_num++;
+    index_node_write_time += (double)(clock() - tStart)/CLOCKS_PER_SEC;
 	/*std::cout << "nodeid: " << node->nodeid
 					  << "\t cout: " << node->count
 					  << "\t level: " << node->level << std::endl;*/
-	fflush(index_file);
     break;
    }
   }
@@ -941,9 +952,12 @@ void PARTITION2Branches(HTETRARTREEROOT root,
   i = RTreePickBranch(pbranch, node);
   TETRARTREENODE child;
   InitNode(&child);
+  
+  clock_t tStart1 = clock();
   fseek(index_file,(node->branch[i].childid-1)*sizeof(TETRARTREENODE),0);
   fread(&child,sizeof(TETRARTREENODE),1,index_file);
   index_node_read_num++;
+  index_node_read_time += (double)(clock() - tStart1)/CLOCKS_PER_SEC;
 
   if (!_RTreeInsertRect(root, pbranch, &child, &n2, level))
   {
@@ -955,15 +969,19 @@ void PARTITION2Branches(HTETRARTREEROOT root,
    CombineMBRTetrad(node->branch[i].mbrs, node->branch[i].mbrs, pbranch->mbrs);
    node->branch[i].orientation = CombineMBO(&(pbranch->orientation), &(node->branch[i].orientation));
 
+   clock_t tStart = clock();
    fseek(index_file,(node->nodeid-1)*sizeof(TETRARTREENODE),0);
    fwrite(node,sizeof(TETRARTREENODE),1,index_file);
+   fflush(index_file);
+   index_node_write_num++;
+   index_node_write_time += (double)(clock() - tStart)/CLOCKS_PER_SEC;
+   
    /*std::cout << "nodeid: " << node->nodeid
    				  << "\t cout: " << node->count
    				  << "\t level: " << node->level 
 				  << "\tbranch i: " << i
 				  << "\t pbranch->childid: " << pbranch->childid
 				  << std::endl;*/
-   fflush(index_file);
    return 0;
   }
 
@@ -1073,12 +1091,12 @@ void build_index(FILE* &object_file, FILE* &index_file)
 			clock_t tStart = clock();
 			fseek(index_file,0L,0);
 			fwrite(root.root_node,sizeof(TETRARTREENODE),1,index_file);
+			fflush(index_file);
 			index_node_write_num++;
             index_node_write_time += (double)(clock() - tStart)/CLOCKS_PER_SEC;
 			/*std::cout << "nodeid: " << root.root_node->nodeid
 					  << "\t cout: " << root.root_node->count
 					  << "\t level: " << root.root_node->level << std::endl;*/
-			fflush(index_file);
 		}
 		else
 		{
@@ -1103,6 +1121,7 @@ void build_index(FILE* &object_file, FILE* &index_file)
 				newroot->level = root.root_node->level + 1;
 
 				/* Find the first index node slot on the disk */
+				clock_t tStart1 = clock();
 				int ftaken;
 				fseek(index_file,0L,SEEK_END);
 				leng=ftell(index_file);
@@ -1113,6 +1132,9 @@ void build_index(FILE* &object_file, FILE* &index_file)
 				 fread(&ftaken,sizeof(int),1,index_file);
 				 if(ftaken==0) break;
 				}
+				taken_read_num++;
+				taken_read_time += (double)(clock() - tStart1)/CLOCKS_PER_SEC;
+				
 				newroot->nodeid=i/sizeof(TETRARTREENODE)+1;
 				index_root_id = newroot->nodeid; // Update index root node id.
 				newroot->count = 2;

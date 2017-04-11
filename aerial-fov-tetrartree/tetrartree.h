@@ -12,16 +12,16 @@ extern "C" {
 #endif
 
 #define  METHODS  1
-#define  PAGE_SIZE    4096 //16384 //8192 //16KB//4096 //4KB
+#define  PAGE_SIZE    16384 //16384 //8192 //16KB//4096 //4KB
 #define  DIMS_NUMB    2       // number of dimensions
 #define  SIDES_NUMB   2*DIMS_NUMB//min max
 #define  MBR_NUMB     4
 
 /* max branching factor of a node */
 //Assume one index node takes one page
-#define MAXCARD (int)((PAGE_SIZE-(4*sizeof(int))) / sizeof(TETRARTREEBRANCH))
+//#define MAXCARD (int)((PAGE_SIZE-(4*sizeof(int))) / sizeof(TETRARTREEBRANCH))
 
-//#define MAXCARD 203
+#define MAXCARD 203
 
 #ifndef INVALD_RECT
   #define INVALID_RECT(x) ((x)->bound[0] > (x)->bound[DIMS_NUMB])//min>max,����Ч����

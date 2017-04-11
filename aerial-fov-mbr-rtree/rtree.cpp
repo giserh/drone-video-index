@@ -23,7 +23,14 @@ static char THIS_FILE[] = __FILE__;
 // Global variants
 extern FILE* index_file; 
 extern int index_root_id; //The id of root index node.
-
+extern int index_node_read_num;
+extern int index_node_write_num;
+extern int taken_read_num;
+extern double index_node_read_time;
+extern double index_node_write_time;
+extern double taken_read_time;
+extern long long RTreeCombineRect_invoke_num;
+extern double RTreeCombineRect_invoke_time;
 
 //Copy a branch to another branch: b1 <- b2
 void CopyBranch(pRTREEBRANCH b1, pRTREEBRANCH b2)
@@ -69,12 +76,17 @@ void EmptyNode(pRTREENODE p)//与前者不同
 {
 	int node=p->nodeid;
 	InitNode(p);
+	
+	clock_t tStart = clock();
 	fseek(index_file,(node-1)*sizeof(RTREENODE),0);
 	fwrite(p,sizeof(RTREENODE),1,index_file);
+    index_node_write_num++;
 	/*std::cout << "nodeid: " << p->nodeid
 					  << "\t cout: " << p->count
 					  << "\t level: " << p->level << std::endl;*/
 	fflush(index_file);
+	index_node_write_num++;
+	index_node_write_time += (double)(clock() - tStart)/CLOCKS_PER_SEC;
 }
 
 /**
@@ -107,22 +119,28 @@ static void _RTreeInitPart( RTREEPARTITION *p, int maxrects, int minfill)
  */
  RTREEMBR RTreeCombineRect( RTREEMBR *rc1, RTREEMBR *rc2 )//两MBR叠加
 {
- int i, j;
- RTREEMBR new_rect;
+    clock_t tStart = clock();
+    
+    int i, j;
+    RTREEMBR new_rect;
 
- if (INVALID_RECT(rc1))
-  return *rc2;
+    if (INVALID_RECT(rc1))
+        return *rc2;
 
- if (INVALID_RECT(rc2))
-  return *rc1;
+    if (INVALID_RECT(rc2))
+        return *rc1;
 
- for (i = 0; i < DIMS_NUMB; i++)
- {
-  new_rect.bound[i] = MIN(rc1->bound[i], rc2->bound[i]);//绝了!!!
-  j = i + DIMS_NUMB;
-  new_rect.bound[j] = MAX(rc1->bound[j], rc2->bound[j]);
- } 
- return new_rect;
+    for (i = 0; i < DIMS_NUMB; i++)
+    {
+        new_rect.bound[i] = MIN(rc1->bound[i], rc2->bound[i]);
+        j = i + DIMS_NUMB;
+        new_rect.bound[j] = MAX(rc1->bound[j], rc2->bound[j]);
+    } 
+    
+    RTreeCombineRect_invoke_time += (double)(clock() - tStart)/CLOCKS_PER_SEC;
+    RTreeCombineRect_invoke_num ++;
+    
+    return new_rect;
 }
 
 
@@ -409,14 +427,20 @@ void SplitNode(HRTREEROOT root, RTREENODE *node, RTREEBRANCH *br, RTREENODE **ne
  /* put branches from buffer into 2 nodes according to chosen partition */
  int i,ftaken=2;
  long filelen;
+ 
+ clock_t tStart1 = clock();
  fseek(index_file,0L,SEEK_END);
  filelen=ftell(index_file);
  for(i=0;i<(int)filelen;i=i+sizeof(RTREENODE))
  {
 	 fseek(index_file,i,0);
 	 fread(&ftaken,sizeof(int),1,index_file);//
+     index_node_read_num++;
 	 if(ftaken==0) break;
  }
+ taken_read_num++;
+ taken_read_time += (double)(clock() - tStart1)/CLOCKS_PER_SEC;
+	
  node->nodeid=i/sizeof(RTREENODE)+1;
  node->taken=1;
  node->level=level;
@@ -425,12 +449,16 @@ void SplitNode(HRTREEROOT root, RTREENODE *node, RTREEBRANCH *br, RTREENODE **ne
  InitNode(*new_node);
  (*new_node)->level = level;
 
+ clock_t tStart = clock();
  for(;i<(int)filelen;i=i+sizeof(RTREENODE))
  {
 	 fseek(index_file,i,0);
 	 fread(&ftaken,sizeof(int),1,index_file);//
 	 if(ftaken==0 && (i/sizeof(RTREENODE)+1)!=(unsigned int)(node->nodeid)) break;
  }
+ taken_read_num++;
+ taken_read_time += (double)(clock() - tStart)/CLOCKS_PER_SEC;
+ 
  (*new_node)->nodeid=i/sizeof(RTREENODE)+1;
  (*new_node)->taken=1;
 
@@ -460,12 +488,17 @@ void SplitNode(HRTREEROOT root, RTREENODE *node, RTREEBRANCH *br, RTREENODE **ne
    {
     CopyBranch(&(node->branch[i]),br);
     node->count++;  
+	
+	clock_t tStart = clock();
 	fseek(index_file,(node->nodeid-1)*sizeof(RTREENODE),0);
 	fwrite(node,sizeof(RTREENODE),1,index_file);
+	fflush(index_file);
+	index_node_write_num++;
+	index_node_write_time += (double)(clock() - tStart)/CLOCKS_PER_SEC;
 	/*std::cout << "nodeid: " << node->nodeid
 					  << "\t cout: " << node->count
 					  << "\t level: " << node->level << std::endl;*/
-	fflush(index_file);
+					  
     break;
    }
   }
@@ -549,8 +582,12 @@ int RTreePickBranch( RTREEMBR *mbr, RTREENODE *node)
   i = RTreePickBranch(&(pbranch->mbr), node);
   RTREENODE child;
   InitNode(&child);
+  
+  clock_t tStart1 = clock();
   fseek(index_file,(node->branch[i].childid-1)*sizeof(RTREENODE),0);
   fread(&child,sizeof(RTREENODE),1,index_file);
+  index_node_read_num++;
+  index_node_read_time += (double)(clock() - tStart1)/CLOCKS_PER_SEC;
 
   if (!_RTreeInsertRect(root, pbranch, &child, &n2, level))
   {
@@ -562,12 +599,15 @@ int RTreePickBranch( RTREEMBR *mbr, RTREENODE *node)
 	   node->branch[i].childid=pbranch->childid;
    }
 
+   clock_t tStart = clock();
    fseek(index_file,(node->nodeid-1)*sizeof(RTREENODE),0);
    fwrite(node,sizeof(RTREENODE),1,index_file);
+   fflush(index_file);
+   index_node_write_num++;
+   index_node_write_time += (double)(clock() - tStart)/CLOCKS_PER_SEC;
    /*std::cout << "nodeid: " << node->nodeid
 					  << "\t cout: " << node->count
 					  << "\t level: " << node->level << std::endl;*/
-   fflush(index_file);
    return 0;
   }
   
@@ -600,8 +640,11 @@ int RTreePickBranch( RTREEMBR *mbr, RTREENODE *node)
 
 void FindRoot(RTREENODE* rootp)
 {
+	clock_t tStart = clock();
 	fseek(index_file,(index_root_id-1)*sizeof(RTREENODE),0);
 	fread(rootp,sizeof(RTREENODE),1,index_file);
+    index_node_read_num++;
+	index_node_read_time += (double)(clock() - tStart)/CLOCKS_PER_SEC;
 }
 
 
@@ -658,12 +701,16 @@ void build_index(FILE* &object_file, FILE* &index_file)
 			root.root_node->level=0;
 			root.root_node->count=1;
 			CopyBranch(&(root.root_node->branch[0]), &branch);
+			
+			clock_t tStart = clock();
 			fseek(index_file,0L,0); //存储
 			fwrite(root.root_node,sizeof(RTREENODE),1,index_file);
+			fflush(index_file);
+            index_node_write_num++;
+			index_node_write_time += (double)(clock() - tStart)/CLOCKS_PER_SEC;
 			/*std::cout << "nodeid: " << root.root_node->nodeid
 					  << "\t cout: " << root.root_node->count
 					  << "\t level: " << root.root_node->level << std::endl;*/
-			fflush(index_file);
 		}//end if leng==0
 		else
 		{
@@ -687,12 +734,17 @@ void build_index(FILE* &object_file, FILE* &index_file)
 				fseek(index_file,0L,SEEK_END);
 				leng=ftell(index_file);
 				int i;
+				
+				clock_t tStart1 = clock();
 				for(i=0;i<(int)leng;i=i+sizeof(RTREENODE))
 				{
 				 fseek(index_file,i,0);
 				 fread(&ftaken,sizeof(int),1,index_file);
 				 if(ftaken==0) break;
 				}
+				taken_read_num++;
+				taken_read_time += (double)(clock() - tStart1)/CLOCKS_PER_SEC;
+	
 				newroot->nodeid=i/sizeof(RTREENODE)+1;
 				index_root_id = newroot->nodeid;
 				std::cout << "index_root_id: " << index_root_id << std::endl;
@@ -704,9 +756,11 @@ void build_index(FILE* &object_file, FILE* &index_file)
 				b.mbr = RTreeNodeCover(newnode);
 				b.childid = newnode->nodeid;
 				AddBranch(&root, &b, newroot, NULL);
-
+				
+				clock_t tStart = clock();
 				fseek(index_file,((root.root_node->nodeid)-1)*sizeof(RTREENODE),0);
 				fwrite(root.root_node,sizeof(RTREENODE),1,index_file);
+                index_node_write_num++;
 				/*std::cout << "nodeid: " << root.root_node->nodeid
 					  << "\t cout: " << root.root_node->count
 					  << "\t level: " << root.root_node->level << std::endl;*/
@@ -714,10 +768,12 @@ void build_index(FILE* &object_file, FILE* &index_file)
 
 				fseek(index_file,((newnode->nodeid)-1)*sizeof(RTREENODE),0);
 				fwrite(newnode,sizeof(RTREENODE),1,index_file);
+                index_node_write_num++;
 				/*std::cout << "nodeid: " << newnode->nodeid
 					  << "\t cout: " << newnode->count
 					  << "\t level: " << newnode->level << std::endl;*/
 				fflush(index_file);
+				index_node_write_time += (double)(clock() - tStart)/CLOCKS_PER_SEC;
 
 				Copy(root.root_node , newroot);
 				delete newroot;
