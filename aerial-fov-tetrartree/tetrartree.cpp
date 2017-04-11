@@ -770,13 +770,13 @@ void SplitNode(HTETRARTREEROOT root, TETRARTREENODE *node,
     CopyBranch(&(node->branch[i]),br);
     node->count++;
 
-	clock_t tStart = clock();
-	CombineMBRTetrad(node->branch[i].mbrs, node->branch[i].mbrs, br->mbrs); //Update
-    node->branch[i].orientation = CombineMBO(&(br->orientation), &(node->branch[i].orientation));
+	//clock_t tStart = clock();
+	//CombineMBRTetrad(node->branch[i].mbrs, node->branch[i].mbrs, br->mbrs); //Update
+    //node->branch[i].orientation = CombineMBO(&(br->orientation), &(node->branch[i].orientation));
 	fseek(index_file,(node->nodeid-1)*sizeof(TETRARTREENODE),0);
 	fwrite(node,sizeof(TETRARTREENODE),1,index_file);
-	index_node_write_num++;
-    index_node_write_time += (double)(clock() - tStart)/CLOCKS_PER_SEC;
+	//index_node_write_num++;
+    //index_node_write_time += (double)(clock() - tStart)/CLOCKS_PER_SEC;
 	/*std::cout << "nodeid: " << node->nodeid
 					  << "\t cout: " << node->count
 					  << "\t level: " << node->level << std::endl;*/
@@ -1120,7 +1120,7 @@ void build_index(FILE* &object_file, FILE* &index_file)
 				PARTITION2Branches(&root, &(newroot->branch[0]), root.root_node->nodeid,
 				                          &(newroot->branch[1]), newnode->nodeid);
 
-				std::cout << "root-nodeid: " << newroot->nodeid
+				/*std::cout << "root-nodeid: " << newroot->nodeid
 					  << "\t cout: " << newroot->count
 					  << "\t level: " << newroot->level 
 					  << "\t countdataid: " << countdataid << std::endl;
@@ -1136,7 +1136,7 @@ void build_index(FILE* &object_file, FILE* &index_file)
 						std::cout << std::endl;
 					}
 					std::cout << std::endl<<std::endl;
-				}
+				}*/
 				/*Add root.root_node as a branch of newroot*/
 				//TetraRTreeNodeCover(&b, root.root_node);
 				//fseek(index_file,0L,SEEK_END);
