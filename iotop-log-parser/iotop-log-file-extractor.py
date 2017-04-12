@@ -1,12 +1,12 @@
 #!/usr/bin/python
 
 ###############################################################################
-# This is a parser for the log file "iotop.log" output by the "iotop" command:
+# This is an extractor for the log file "iotop.log" output by the "iotop" command:
 # "sudo iotop -botqqqk -d 10 > ./iotop.log"
 #
 # Input parameters:
 #       argv[1]: the log input file name. [input]
-#       argv[2]: the parsed output file name. [output]
+#       argv[2]: the extracted output file name. [output]
 #       argv[3]: the pid of the process to be monitored. [input]
 #
 # Each line in the output file is in form of 
