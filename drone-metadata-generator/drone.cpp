@@ -8,7 +8,8 @@
 #include <math.h>
 #include <iostream>
 #include <iomanip>
- 
+#include <cmath> 
+
 #include "drone.h"
 
 
@@ -181,5 +182,89 @@ void Drone::calc_coverage()
 	Calc_actual_points(XD);
 }
 
+
+
+
+
+
+
+
+
+
+/***
+ * Calculate the surface distance between two points A and B.
+ * @para[in] point A(Alat, Alng) and point B(Blat, Blng)
+ * @para[out] the distance between A and B (In km unit).
+ */
+REALTYPE Drone::EarthDistance(REALTYPE Alat, REALTYPE Alng, REALTYPE Blat, REALTYPE Blng) 
+{
+	REALTYPE distpq = 6371 * 2 * asin(sqrt(pow(sin((Alat - Blat)*PI / 180 / 2), 2) 
+	                                    + cos(Alat*PI / 180) 
+										  * cos(Blat*PI / 180) 
+										  * pow(sin((Alng - Blng) * PI / 180 / 2), 2)
+										));
+	return distpq; //kilometers
+}
+
+
+
+/*** 
+ * Calculat the area of a quadrilateral (pointA, pointB, pointC, pointD).
+ * Each point is represented as <lat, lng>
+ */
+REALTYPE Drone::calc_quadrilateral_area()
+{
+	// Calculate the distance from pointB to pointD
+	REALTYPE segmentBD_length = EarthDistance(this->quadrilateral[2], this->quadrilateral[3], 
+	                                          this->quadrilateral[6], this->quadrilateral[7]);
+	
+	/***
+	 * resources: https://knowledge.safe.com/articles/725/calculating-accurate-length-in-meters-for-lat-long.html
+	 * resources: http://physics.wooster.edu/Manz/sandcollection/swaplist/Latitude%20and%20Longitude.pdf
+	 ***/
+	REALTYPE lat = this->quadrilateral[2];
+	REALTYPE KMperDegreeLat = 111.13292 - 0.55982 * cos(2* lat/180*PI) + 0.001175*cos(4*lat/180*PI);
+	REALTYPE KMperDegreeLng = 111.41284 * cos(lat/180*PI) - 0.0935 * cos(3*lat/180*PI);
+	REALTYPE avgKMperDegree = (KMperDegreeLat + KMperDegreeLng)/2.0;
+	//std::cout<<KMperDegreeLat <<", " << KMperDegreeLng << ": " << avgKMperDegree << '\n';
+	
+	// Calculate the height of the triangle ABD, i.e., the distance from pointA to lineBD
+	REALTYPE AA = this->quadrilateral[2] - this->quadrilateral[6]; //YB - YD
+	REALTYPE BB = this->quadrilateral[7] - this->quadrilateral[3]; //XD - XB
+	REALTYPE CC = this->quadrilateral[3]*this->quadrilateral[6] - this->quadrilateral[7]*this->quadrilateral[2]; //XBYD - XDYB
+	REALTYPE height_A_BD = abs(AA*this->quadrilateral[1] + BB*this->quadrilateral[0] + CC) / sqrt(AA*AA + BB*BB);
+	REALTYPE height_C_BD = abs(AA*this->quadrilateral[5] + BB*this->quadrilateral[4] + CC) / sqrt(AA*AA + BB*BB);
+	REALTYPE area_triangleABD = height_A_BD * avgKMperDegree * segmentBD_length * 0.5;
+	REALTYPE area_triangleCBD = height_C_BD * avgKMperDegree * segmentBD_length * 0.5;
+	REALTYPE area = area_triangleABD + area_triangleCBD;
+	return area;
+}
+
+
+/***
+ * Calculat the area of the MBR of a quadrilateral (pointA, pointB, pointC, pointD).
+ * Each point is represented as <lat, lng>
+ */
+REALTYPE Drone::calc_quadrilateral_mbr_area(std::vector<REALTYPE>& mbr)
+{
+	REALTYPE minLat = std::min(std::min(std::min(this->quadrilateral[0], this->quadrilateral[2]), this->quadrilateral[4]), this->quadrilateral[6]);
+	REALTYPE minLng = std::min(std::min(std::min(this->quadrilateral[1], this->quadrilateral[3]), this->quadrilateral[5]), this->quadrilateral[7]);
+	REALTYPE maxLat = std::max(std::max(std::max(this->quadrilateral[0], this->quadrilateral[2]), this->quadrilateral[4]), this->quadrilateral[6]);
+	REALTYPE maxLng = std::max(std::max(std::max(this->quadrilateral[1], this->quadrilateral[3]), this->quadrilateral[5]), this->quadrilateral[7]);
+	REALTYPE dist_lat = EarthDistance(minLat, minLng, maxLat, minLng);
+	REALTYPE dist_lng = EarthDistance(minLat, minLng, minLat, maxLng);
+	REALTYPE area = dist_lat * dist_lng;
+	
+	if(mbr.size()>=4)
+	{
+		// [minx, maxx, miny, maxy], i.e., [minLng, maxLng, maxLat, maxLat]
+		mbr[0] = minLng;
+		mbr[1] = maxLng;
+		mbr[2] = minLat;
+		mbr[3] = maxLat;
+	}
+	
+	return area;
+}
 
 

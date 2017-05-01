@@ -11,77 +11,14 @@
 using namespace std;
 
 
-/***
- Calculate the surface distance between two points A and B.
- @para[in] point A(Alat, Alng) and point B(Blat, Blng)
- @para[out] the distance between A and B (In km unit).
-***/
-REALTYPE EarthDistance(REALTYPE Alat, REALTYPE Alng, REALTYPE Blat, REALTYPE Blng) 
-{
-	REALTYPE distpq = 6371 * 2 * asin(sqrt(pow(sin((Alat - Blat)*PI / 180 / 2), 2) 
-	                                    + cos(Alat*PI / 180) 
-										  * cos(Blat*PI / 180) 
-										  * pow(sin((Alng - Blng) * PI / 180 / 2), 2)
-										));
-	return distpq; //kilometers
-}
-
-
-
-/*** 
- Calculat the area of a quadrilateral (pointA, pointB, pointC, pointD).
- Each point is represented as <lat, lng>
-***/
-REALTYPE calc_quadrilateral_area(std::vector<REALTYPE>& quadrilateral)
-{
-	// Calculate the distance from pointB to pointD
-	REALTYPE segmentBD_length = EarthDistance(quadrilateral[2], quadrilateral[3], 
-	                                       quadrilateral[6], quadrilateral[7]);
-	
-	/***
-	 * resources: https://knowledge.safe.com/articles/725/calculating-accurate-length-in-meters-for-lat-long.html
-	 * resources: http://physics.wooster.edu/Manz/sandcollection/swaplist/Latitude%20and%20Longitude.pdf
-	 ***/
-	REALTYPE lat = quadrilateral[2];
-	REALTYPE KMperDegreeLat = 111.13292 - 0.55982 * cos(2* lat/180*PI) + 0.001175*cos(4*lat/180*PI);
-	REALTYPE KMperDegreeLng = 111.41284 * cos(lat/180*PI) - 0.0935 * cos(3*lat/180*PI);
-	REALTYPE avgKMperDegree = (KMperDegreeLat + KMperDegreeLng)/2.0;
-	//std::cout<<KMperDegreeLat <<", " << KMperDegreeLng << ": " << avgKMperDegree << '\n';
-	
-	// Calculate the height of the triangle ABD, i.e., the distance from pointA to lineBD
-	REALTYPE AA = quadrilateral[2] - quadrilateral[6]; //YB - YD
-	REALTYPE BB = quadrilateral[7] - quadrilateral[3]; //XD - XB
-	REALTYPE CC = quadrilateral[3]*quadrilateral[6] - quadrilateral[7]*quadrilateral[2]; //XBYD - XDYB
-	REALTYPE height_A_BD = abs(AA*quadrilateral[1] + BB*quadrilateral[0] + CC) / sqrt(AA*AA + BB*BB);
-	REALTYPE height_C_BD = abs(AA*quadrilateral[5] + BB*quadrilateral[4] + CC) / sqrt(AA*AA + BB*BB);
-	REALTYPE area_triangleABD = height_A_BD * avgKMperDegree * segmentBD_length * 0.5;
-	REALTYPE area_triangleCBD = height_C_BD * avgKMperDegree * segmentBD_length * 0.5;
-	REALTYPE area = area_triangleABD + area_triangleCBD;
-	return area;
-}
-
-
-/***
- Calculat the area of the MBR of a quadrilateral (pointA, pointB, pointC, pointD).
- Each point is represented as <lat, lng>
-***/
-REALTYPE calc_quadrilateral_mbr_area(std::vector<REALTYPE>& quadrilateral)
-{
-	REALTYPE minLat = std::min(std::min(std::min(quadrilateral[0], quadrilateral[2]), quadrilateral[4]), quadrilateral[6]);
-	REALTYPE minLng = std::min(std::min(std::min(quadrilateral[1], quadrilateral[3]), quadrilateral[5]), quadrilateral[7]);
-	REALTYPE maxLat = std::max(std::max(std::max(quadrilateral[0], quadrilateral[2]), quadrilateral[4]), quadrilateral[6]);
-	REALTYPE maxLng = std::max(std::max(std::max(quadrilateral[1], quadrilateral[3]), quadrilateral[5]), quadrilateral[7]);
-	REALTYPE dist_lat = EarthDistance(minLat, minLng, maxLat, minLng);
-	REALTYPE dist_lng = EarthDistance(minLat, minLng, minLat, maxLng);
-	REALTYPE area = dist_lat * dist_lng;
-	return area;
-}
-
 
 
 int main(int argc, char* argv[])
 {
-	std::string data_fname(argv[1]);
+	/***
+	 * Calculate the deadspace ratio for aerial-FOVs in the data file.
+	 */
+	/*std::string data_fname(argv[1]);
 	ifstream data_file;
 	data_file.open(data_fname);
 	if (!data_file.is_open()) {
@@ -142,7 +79,63 @@ int main(int argc, char* argv[])
 	std::cout << "avg_quadrilateral_area: " << avg_quadrilateral_area <<'\n'
 	          << "avg_mbr_area: " << avg_mbr_area << '\n'
 			  << "avg_area_diff: " << avg_area_diff << '\n'
-			  << "dead space ratio: " << avg_area_diff/avg_mbr_area*100.0 << '\n';
+			  << "dead space ratio: " << avg_area_diff/avg_mbr_area*100.0 << '\n';*/
+			  
+	
+	/***
+	 * Analyze the deadspace ratio affected by azimuth, pitch and roll angles.
+	 */
+	std::string out_fname(argv[1]);
+	ofstream out_file;
+	out_file.open(out_fname);
+	if (!out_file.is_open()) {
+		std::cout << "Couldn't open " << out_fname << std::endl;
+		return -1;
+	}
+	
+	REALTYPE lat = 34.020551;
+	REALTYPE lng = -118.290452;
+	REALTYPE hgt = 1; //camera height (distance from ground, kilometer)
+	REALTYPE azimuth = 0.0; //w.r.t. the north, in degree.
+	REALTYPE pitch = 0.0; //in degree
+	REALTYPE roll = 0.0; //in degree
+	REALTYPE viewable_angle = 80.0; //camera viewable angle (in degree)
+	
+	
+	for(azimuth = 0.0; azimuth<360; azimuth = azimuth+30)
+		for(roll = 0.0; roll<90.0; roll = roll+10)
+			for(pitch=0.0; pitch<90.0; pitch = pitch+10)
+	{
+		Drone drone(lat, lng, hgt, azimuth, pitch, roll, viewable_angle); 
+		drone.calc_coverage();
+		
+		// Calculate the area of the quadrilateral.
+		REALTYPE quadrilateral_area = drone.calc_quadrilateral_area();
+		
+		// Calculate the area of the MBR of the quadrilateral.
+		std::vector<REALTYPE> MBR(4); 
+		REALTYPE mbr_area = drone.calc_quadrilateral_mbr_area(MBR);
+		REALTYPE area_diff = mbr_area - quadrilateral_area;
+		
+		// Print information.
+		char seprator = ',';
+		out_file << azimuth << seprator << roll << seprator << pitch << seprator
+		         << quadrilateral_area << seprator
+		         << mbr_area << seprator
+				 << azimuth << seprator
+		         << area_diff/mbr_area*100.0 << seprator;
+		
+		for(size_t qi=0; qi+1<drone.quadrilateral.size(); qi = qi + 2)
+			out_file << std::fixed << std::setprecision(6) 
+		             << "{lat: " << drone.quadrilateral[qi] << ", lng: " << drone.quadrilateral[qi+1] << "}, ";
+	
+	    for(auto r : MBR)
+			out_file << std::fixed << std::setprecision(6) << r << seprator;
+		
+		out_file << '\n';
+	}
+	
+	out_file.close();	  
 	return 0;
 }
 	

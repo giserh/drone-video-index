@@ -67,6 +67,26 @@ public:
     void calc_coverage();
 	
 	
+	/***
+     * Calculate the surface distance between two points A and B.
+     * @para[in] point A(Alat, Alng) and point B(Blat, Blng)
+     * @para[out] the distance between A and B (In km unit).
+     */
+    REALTYPE EarthDistance(REALTYPE Alat, REALTYPE Alng, REALTYPE Blat, REALTYPE Blng);
+
+    /*** 
+     * Calculat the area of a quadrilateral (pointA, pointB, pointC, pointD).
+     * Each point is represented as <lat, lng>
+     */
+    REALTYPE calc_quadrilateral_area();
+	
+	/***
+     * Calculat the area of the MBR of a quadrilateral (pointA, pointB, pointC, pointD).
+     * Each point is represented as <lat, lng>
+     */
+	REALTYPE calc_quadrilateral_mbr_area(std::vector<REALTYPE>& mbr);
+	
+	
 	
 private:
     /**
