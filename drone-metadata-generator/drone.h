@@ -87,6 +87,16 @@ public:
 	REALTYPE calc_quadrilateral_mbr_area(std::vector<REALTYPE>& mbr);
 	
 	
+	/*** 
+	 * Check whether a point inside of a pyramid (a 3d-aerial-FOV object).
+	 *
+	 * @param[in] the latitude of the point.
+	 * @param[in] the longitude of the point.
+	 *
+	 * @return true if inside; false otherwise. 
+	 */
+	bool point_in_pyramid(REALTYPE plat, REALTYPE plng);
+	
 	
 private:
     /**
@@ -99,14 +109,13 @@ private:
 	 */
     void calc_rotatedPoint(std::vector<REALTYPE>& X, 
 	                       REALTYPE alpha, REALTYPE beta, REALTYPE gama);
-						   
-						   
+	
 	/**
 	 * Calculate the product of two matrixes.
 	 */
 	void matrix_prod(std::vector<REALTYPE>& X,
                      std::vector<std::vector<REALTYPE>> rotation_matrix);
-					 
+	
 	/**
 	 * Calculate the projected point for a rotated point
 	 * @param X[in, out] point(x, y, z, 1)

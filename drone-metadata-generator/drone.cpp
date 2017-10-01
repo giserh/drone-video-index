@@ -268,3 +268,43 @@ REALTYPE Drone::calc_quadrilateral_mbr_area(std::vector<REALTYPE>& mbr)
 }
 
 
+
+/*
+REALTYPE lat; //camera latitude
+REALTYPE lng; //camera longitude
+REALTYPE hgt; //camera height (distance from ground, kilometer)
+REALTYPE azimuth_angle; //w.r.t. the north, in degree.
+REALTYPE pitch_angle; //in degree
+REALTYPE roll_angle; //in degree
+REALTYPE view_angle; //camera viewable angle (in degree)
+*/
+
+/*** 
+ * Check whether a point inside of a pyramid (a 3d-aerial-FOV object).
+ *
+ * @param[in] the latitude of the point.
+ * @param[in] the longitude of the point.
+ *
+ * @return true if inside; false otherwise. 
+ */
+bool Drone::point_in_pyramid(REALTYPE plat, REALTYPE plng)
+{
+	REALTYPE vecx_oq = plng - this->lng;
+	REALTYPE vecy_oq = plat - this->lat;
+	REALTYPE vecz_oq = (0 - this->hgt) - 0;
+	
+	return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -38,31 +38,38 @@ BATCH_SIZE="130"
 
 
 
-#./calc-quatrilaterals.exe ${RAW_DATA_FILE} ${QUATRILATERAL_FILE}
-#./calc-quatrilaterals.exe ${LATITUDE} ${LONGITUDE} ${HEIGHT} ${AZIMUTH} ${PITCH} ${ROLL} ${VIEWABLE_ANGLE}
+#./calc-quatrilaterals.exe atlantik-drone-video-file ${RAW_DATA_FILE} ${QUATRILATERAL_FILE}
+#./calc-quatrilaterals.exe process-one-fov ${LATITUDE} ${LONGITUDE} ${HEIGHT} ${AZIMUTH} ${PITCH} ${ROLL} ${VIEWABLE_ANGLE}
+
+
+RAW_DATA_FILE="../../video-demo/real-time-kml/NII-drone-video/metadata-1481690543279.csv"
+QUATRILATERAL_FILE="../../video-demo/real-time-kml/NII-drone-video/quatrilaterals-1481690543279.csv"
+#./calc-quatrilaterals.exe nii-drone-video-file ${RAW_DATA_FILE} ${QUATRILATERAL_FILE}
+
+
+RAW_DATA_FILE="../../video-demo/real-time-kml/NII-drone-video/metadata-1481690543279.csv"
+KML_FILE="../../video-demo/real-time-kml/NII-drone-video/CesiumJS-4triangles.txt"
+./calc-quatrilaterals nii-generate-kml ${RAW_DATA_FILE} ${KML_FILE}
 
 
 
 DEAD_SPACE_AREA_FILE="./data/dead_space_ratio.csv"
 #./area-comparison.exe ${QUATRILATERAL_FILE} ${DEAD_SPACE_AREA_FILE}
 
+DEAD_SPACE_AREA_FILE="./data/fordisplay-LAMemorialColiseum.csv"
+#./area-comparison.exe ${DEAD_SPACE_AREA_FILE}
 
 
 
 QUERY_NUM="10000"
 QUERIES_FILE="./queries/raw-point-queries.txt"
 QUERY_TYPE="point_query"
-./generate-queries.exe ${QUERIES_FILE} ${QUERY_TYPE} ${MIN_LAT} ${MIN_LNG} ${MAX_LAT} ${MAX_LNG} ${QUERY_NUM}
+#./generate-queries.exe ${QUERIES_FILE} ${QUERY_TYPE} ${MIN_LAT} ${MIN_LNG} ${MAX_LAT} ${MAX_LNG} ${QUERY_NUM}
 
 QUERIES_FILE="./queries/raw-range-queries.txt"
 QUERY_TYPE="range_query"
-./generate-queries.exe ${QUERIES_FILE} ${QUERY_TYPE} ${MIN_LAT} ${MIN_LNG} ${MAX_LAT} ${MAX_LNG} ${QUERY_NUM} ${MIN_RADIUS} ${MAX_RADIUS}
+#./generate-queries.exe ${QUERIES_FILE} ${QUERY_TYPE} ${MIN_LAT} ${MIN_LNG} ${MAX_LAT} ${MAX_LNG} ${QUERY_NUM} ${MIN_RADIUS} ${MAX_RADIUS}
 
 QUERIES_FILE="./queries/raw-directional-queries.txt"
 QUERY_TYPE="directional_query"
-./generate-queries.exe ${QUERIES_FILE} ${QUERY_TYPE} ${MIN_LAT} ${MIN_LNG} ${MAX_LAT} ${MAX_LNG} ${QUERY_NUM} ${MIN_DIR} ${MAX_DIR}
-
-
-
-
-
+#./generate-queries.exe ${QUERIES_FILE} ${QUERY_TYPE} ${MIN_LAT} ${MIN_LNG} ${MAX_LAT} ${MAX_LNG} ${QUERY_NUM} ${MIN_DIR} ${MAX_DIR}

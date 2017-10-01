@@ -58,7 +58,7 @@ clean:
 	cp /dev/null ./build-index.log
 	cp /dev/null ./query.log
 	cp /dev/null ./orientation-info.log
-
+	cp /dev/null ./extended-4KB-correct-opt-tetrartree.index
 doc:
 	doxygen
 

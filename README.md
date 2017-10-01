@@ -1,23 +1,20 @@
-# drone-video-index
+This repositoiry includes the source code of drone video metadata processing, drone video indexing. 
 
 
-###
-# comment for building TetraR-tree 
-#
-make clean
-make build-tetrartree
-./run.sh
+Folder drone-metadata-generator:
+1. Calculate quadrilateral-shaped aerial-FOVs from drone video raw sensor-metadata 
+(e.g., azimuth, pitch, roll angles). (calc-quatrilaterals.cpp)
+
+2. Generate a large dataset from a small real dataset with the similar distribution. 
+(data-extension.cpp)
+
+3. Generate queries on drone videos. (generate-queries.cpp)
 
 
-###
-# comment for monitoring memory usage 
-#
-./memusg.sh ./run.sh
+Folder aerial-fov-mbr-rtree:
+Implementation of r-tree indexing for aerial-fovs.
 
 
-###
-# comment for monitoring i/o costs 
-#
-$Terminal1: ./run.sh
-$Terminal2: sudo iotop -botqqqk -d 10 > /var/www/html/YingSpace/drone-video-index/aerial-fov-tetrartree/iotop.log 
-python ./iotop-log-file-parser.py iotop.log parsed-iotop.log 29591 # inputLogFilename, outputFilename, pID
+
+Folder aerial-fov-tetrartree:
+Implementation of the proposed TetraR-tree for aerial-fovs.

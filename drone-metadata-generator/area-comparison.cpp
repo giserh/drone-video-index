@@ -93,8 +93,17 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	REALTYPE lat = 34.020578; //34.020551;
-	REALTYPE lng = -118.285416; //-118.290452;
+	/* Tommy Trajon */
+	//REALTYPE lat = 34.020578; //34.020551;
+	//REALTYPE lng = -118.285416; //-118.290452;
+	
+	/* LA Memorial Coliseum */
+	//REALTYPE lat = 34.014012; 
+	//REALTYPE lng = -118.287927; 
+	
+	REALTYPE lat = 34.020112; 
+	REALTYPE lng = -118.286535; 
+	
 	REALTYPE hgt = 0.2; //camera height (distance from ground, kilometer)
 	REALTYPE azimuth = 0.0; //w.r.t. the north, in degree.
 	REALTYPE pitch = 0.0; //in degree
@@ -104,7 +113,7 @@ int main(int argc, char* argv[])
 
 	for(azimuth = 0.0; azimuth<360; azimuth = azimuth+30)
 		for(roll = 0.0; roll<30.0; roll = roll+17)
-			for(pitch=0.0; pitch<30.0; pitch = pitch+17)
+			for(pitch=0.0; pitch<30.0; pitch = pitch+5)
 	{
 		Drone drone(lat, lng, hgt, azimuth, pitch, roll, viewable_angle);
 		drone.calc_coverage();

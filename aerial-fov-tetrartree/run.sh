@@ -8,8 +8,8 @@ INDEX_FILE="./extended-4KB-correct-opt-tetrartree.index"
 BUILD_INDEX_LOG="./build-index.log"
 QUERY_LOG="./query.log"
 
-./memusg.sh ./build-tetrartree.exe ${TXT_OBJECT_QUATRILATERAL} ${INDEX_FILE} ${BUILD_INDEX_LOG} 1
-
+#./memusg.sh
+./build-tetrartree.exe ${TXT_OBJECT_QUATRILATERAL} ${INDEX_FILE} ${BUILD_INDEX_LOG} 1
 
 
 
