@@ -1,7 +1,7 @@
-This repositoiry includes the source code of drone video metadata processing, drone video indexing. 
+This repositoiry includes the source code of drone video metadata processing and drone video indexing. 
 
 
-Folder drone-metadata-generator:
+Folder "drone-metadata-generator":
 1. Calculate quadrilateral-shaped aerial-FOVs from drone video raw sensor-metadata 
 (e.g., azimuth, pitch, roll angles). (calc-quatrilaterals.cpp)
 
@@ -11,10 +11,11 @@ Folder drone-metadata-generator:
 3. Generate queries on drone videos. (generate-queries.cpp)
 
 
-Folder aerial-fov-mbr-rtree:
+
+Folder "aerial-fov-mbr-rtree":
 Implementation of r-tree indexing for aerial-fovs.
 
 
 
-Folder aerial-fov-tetrartree:
+Folder "aerial-fov-tetrartree":
 Implementation of the proposed TetraR-tree for aerial-fovs.
