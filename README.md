@@ -3,12 +3,12 @@ This repositoiry includes the source code of drone video metadata processing and
 
 Folder "drone-metadata-generator":
 1. Calculate quadrilateral-shaped aerial-FOVs from drone video raw sensor-metadata 
-(e.g., azimuth, pitch, roll angles). (calc-quatrilaterals.cpp)
+(e.g., azimuth, pitch, roll angles).
 
 2. Generate a large dataset from a small real dataset with the similar distribution. 
-(data-extension.cpp)
 
-3. Generate queries on drone videos. (generate-queries.cpp)
+
+3. Generate queries on drone videos. 
 
 
 
