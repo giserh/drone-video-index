@@ -1,4 +1,4 @@
-This repositoiry includes the source code of drone video metadata processing and drone video indexing. 
+This repository includes the source code of drone video metadata processing and drone video indexing. 
 
 
 Folder "drone-metadata-generator":
